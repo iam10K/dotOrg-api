@@ -31,6 +31,7 @@ public class Chatter {
 
     private Chatter() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Long getChatterId() {
         return chatterId;
     }
@@ -40,6 +41,8 @@ public class Chatter {
         this.chatterId = chatterId;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Key<Member> getMemberId() {
         return memberId;
     }
@@ -49,6 +52,7 @@ public class Chatter {
         this.memberId = memberId;
     }
 
+
     public boolean isMuted() {
         return isMuted;
     }
@@ -56,6 +60,7 @@ public class Chatter {
     public void setMuted(boolean muted) {
         isMuted = muted;
     }
+
 
     public boolean isIgnore() {
         return ignore;
@@ -65,6 +70,8 @@ public class Chatter {
         this.ignore = ignore;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Key<Chat> getChatId() {
         return chatId;
     }

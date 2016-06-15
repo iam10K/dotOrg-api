@@ -26,7 +26,7 @@ public class News {
     private String title;
     private String description;
 
-    private Key<Member> memberId;
+    private Long memberId;
 
     private List<Object> attachments;
 
@@ -35,6 +35,7 @@ public class News {
 
     private News() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getNewsId() {
         return newsId;
     }
@@ -44,6 +45,7 @@ public class News {
         this.newsId = newsId;
     }
 
+
     public String getTitle() {
         return title;
     }
@@ -51,6 +53,7 @@ public class News {
     public void setTitle(String title) {
         this.title = title;
     }
+
 
     public String getDescription() {
         return description;
@@ -60,14 +63,16 @@ public class News {
         this.description = description;
     }
 
-    public Key<Member> getMemberId() {
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public Long getMemberId() {
         return memberId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setMemberId(Key<Member> memberId) {
+    public void setMemberId(Long memberId) {
         this.memberId = memberId;
     }
+
 
     public List<Object> getAttachments() {
         return attachments;
@@ -77,6 +82,8 @@ public class News {
         this.attachments = attachments;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Group> getGroupId() {
         return groupId;
     }

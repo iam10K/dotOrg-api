@@ -1,6 +1,5 @@
 package com.dotorg.api.endpoints;
 
-import com.dotorg.api.OfyHelper;
 import com.dotorg.api.objects.Group;
 import com.dotorg.api.objects.User;
 import com.google.api.server.spi.config.Api;
@@ -14,8 +13,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
-import com.google.firebase.tasks.OnSuccessListener;
-import com.googlecode.objectify.Objectify;
+import com.google.firebase.tasks.Task;
 import com.googlecode.objectify.cmd.Query;
 
 import java.io.FileInputStream;
@@ -51,8 +49,6 @@ public class GroupEndpoint {
 
     private static final int DEFAULT_LIST_LIMIT = 10;
 
-    private Objectify objectify = OfyHelper.ofy();
-
     private FirebaseOptions options;
 
     public GroupEndpoint() {
@@ -71,6 +67,7 @@ public class GroupEndpoint {
      * Returns the {@link Group} with the corresponding ID.
      *
      * @param groupId the ID of the entity to be retrieved
+     * @param token  token for current session
      * @return the entity with the corresponding ID
      * @throws NotFoundException if there is no {@code Group} with the provided ID.
      */
@@ -96,6 +93,8 @@ public class GroupEndpoint {
 
     /**
      * Inserts a new {@code Group}.
+     *
+     * @param token  token for current session
      */
     @ApiMethod(
             name = "create",
@@ -124,6 +123,7 @@ public class GroupEndpoint {
      *
      * @param groupId the ID of the entity to be updated
      * @param group   the desired state of the entity
+     * @param token  token for current session
      * @return the updated version of the entity
      * @throws NotFoundException if the {@code groupId} does not correspond to an existing
      *                           {@code Group}
@@ -137,7 +137,7 @@ public class GroupEndpoint {
         try {
             user = validateToken(token);
         } catch (Exception ex) {
-            throw new UnauthorizedException("Could not validate token.");
+            throw ex;
         }
         // TODO: You should validate your ID parameter against your resource's ID here.
         checkExists(groupId);
@@ -150,6 +150,7 @@ public class GroupEndpoint {
      * Deletes the specified {@code Group}.
      *
      * @param groupId the ID of the entity to delete
+     * @param token  token for current session
      * @throws NotFoundException if the {@code groupId} does not correspond to an existing
      *                           {@code Group}
      */
@@ -174,6 +175,7 @@ public class GroupEndpoint {
      * List all entities.
      *
      * @param limit  the maximum number of entries to return
+     * @param token  token for current session
      * @return a response that encapsulates the result list and the next page token/cursor
      */
     @ApiMethod(
@@ -209,24 +211,25 @@ public class GroupEndpoint {
         }
     }
 
-    private User validateToken (@Named("token") String token) throws Exception {
-        if (token == null) {
-            throw new NotFoundException("Invalid token. Access Denied.");
+    private User validateToken (String token) throws NotFoundException, UnauthorizedException {
+        Task<FirebaseToken> tokenTask = FirebaseAuth.getInstance().verifyIdToken(token);
+
+        while (!tokenTask.isComplete()) {
         }
 
-        final User[] user = new User[1];
-        FirebaseAuth.getInstance().verifyIdToken(token)
-            .addOnSuccessListener(new OnSuccessListener<FirebaseToken>() {
-                @Override
-                public void onSuccess(FirebaseToken decodedToken) {
-                    String profileId = decodedToken.getUid();
-                    user[0] = ofy().load().type(User.class).id(profileId).now();
-                }
-            });
+        FirebaseToken firebaseToken = tokenTask.getResult();
 
-        if (user[0] == null) {
-            throw new NotFoundException("Could not validate token. Access Denied.");
+        User user;
+
+        if (firebaseToken == null) {
+            throw new UnauthorizedException("Invalid token. Access Denied.");
         }
-        return user[0];
+
+        user = ofy().load().type(User.class).id(firebaseToken.getUid()).now();
+
+        if (user == null) {
+            throw new NotFoundException("User not found for Token.");
+        }
+        return user;
     }
 }

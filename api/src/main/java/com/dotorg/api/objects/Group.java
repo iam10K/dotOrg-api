@@ -2,7 +2,6 @@ package com.dotorg.api.objects;
 
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
@@ -23,7 +22,7 @@ public class Group {
 
     @Id
     private Long groupId;
-    private Key<User> creator;
+    private Long creator;
 
     private Date createdAt;
     private Date modifiedAt;
@@ -48,6 +47,7 @@ public class Group {
 
     private Group() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getGroupId() {
         return groupId;
     }
@@ -57,6 +57,7 @@ public class Group {
         this.groupId = groupId;
     }
 
+
     public String getName() {
         return name;
     }
@@ -64,6 +65,7 @@ public class Group {
     public void setName(String name) {
         this.name = name;
     }
+
 
     public String getDescription() {
         return description;
@@ -73,6 +75,7 @@ public class Group {
         this.description = description;
     }
 
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -81,14 +84,17 @@ public class Group {
         this.imageUrl = imageUrl;
     }
 
-    public Key<User> getCreator() {
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public Long getCreator() {
         return creator;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setCreator(Key<User> creator) {
+    public void setCreator(Long creator) {
         this.creator = creator;
     }
+
 
     public boolean isPublicGroup() {
         return publicGroup;
@@ -98,6 +104,8 @@ public class Group {
         this.publicGroup = publicGroup;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public String getJoinUrl() {
         return joinUrl;
     }
@@ -107,6 +115,8 @@ public class Group {
         this.joinUrl = joinUrl;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -116,6 +126,8 @@ public class Group {
         this.createdAt = createdAt;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Date getModifiedAt() {
         return modifiedAt;
     }
@@ -125,6 +137,8 @@ public class Group {
         this.modifiedAt = modifiedAt;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Member> getMembers() {
         return members;
     }
@@ -134,6 +148,8 @@ public class Group {
         this.members = members;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Chat> getChats() {
         return chats;
     }
@@ -143,6 +159,8 @@ public class Group {
         this.chats = chats;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<News> getNews() {
         return news;
     }
@@ -151,6 +169,7 @@ public class Group {
     public void setNews(List<News> news) {
         this.news = news;
     }
+
 
     public List<Poll> getPolls() {
         return polls;
@@ -161,6 +180,8 @@ public class Group {
         this.polls = polls;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Event> getEvents() {
         return events;
     }

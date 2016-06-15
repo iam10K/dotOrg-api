@@ -31,13 +31,14 @@ public class Event {
     private String description;
     private GeoPt location;
 
-    private Key<Member> memberId;
+    private Long memberId;
 
     @Parent
     private Key<Group> groupId;
 
     private Event() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getEventId() {
         return eventId;
     }
@@ -47,6 +48,7 @@ public class Event {
         this.eventId = eventId;
     }
 
+
     public Date getStartDate() {
         return startDate;
     }
@@ -54,6 +56,7 @@ public class Event {
     public void setStartDate(Date startDate) {
         this.startDate = startDate;
     }
+
 
     public Date getEndDate() {
         return endDate;
@@ -63,6 +66,7 @@ public class Event {
         this.endDate = endDate;
     }
 
+
     public String getTitle() {
         return title;
     }
@@ -70,6 +74,7 @@ public class Event {
     public void setTitle(String title) {
         this.title = title;
     }
+
 
     public String getDescription() {
         return description;
@@ -79,6 +84,7 @@ public class Event {
         this.description = description;
     }
 
+
     public GeoPt getLocation() {
         return location;
     }
@@ -87,15 +93,17 @@ public class Event {
         this.location = location;
     }
 
-    public Key<Member> getMemberId() {
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public Long getMemberId() {
         return memberId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setMemberId(Key<Member> memberId) {
+    public void setMemberId(Long memberId) {
         this.memberId = memberId;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Group> getGroupId() {
         return groupId;
     }

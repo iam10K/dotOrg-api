@@ -14,16 +14,10 @@ import com.googlecode.objectify.ObjectifyService;
 import java.util.logging.Logger;
 
 import javax.inject.Named;
+import javax.servlet.http.HttpServletRequest;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
-/**
- * WARNING: This generated code is intended as a sample or starting point for using a
- * Google Cloud Endpoints RESTful API with an Objectify entity. It provides no data access
- * restrictions and no data validation.
- * <p/>
- * DO NOT deploy this code unchanged as part of a real application to real users.
- */
 @Api(
         name = "users",
         version = "v1",
@@ -44,23 +38,29 @@ public class UserEndpoint {
     }
 
     /**
-     * Returns the {@link User} with the corresponding ID.
+     * Returns the authenticated {@link User}.
      *
-     * @param token of the entity to be retrieved
-     * @return the entity with the corresponding ID
-     * @throws NotFoundException if there is no {@code User} with the provided ID.
+     * @param token token for current session
+     * @return the {@code User} that is currently authenticated.
+     * @throws NotFoundException if there is no {@code User} for the token.
+     * @throws UnauthorizedException if the token is invalid.
      */
     @ApiMethod(
             name = "me",
             path = "users/me",
             httpMethod = ApiMethod.HttpMethod.GET)
-    public User me(@Named("token") String token) throws NotFoundException, UnauthorizedException {
+    public User me(HttpServletRequest req, @Named("token") String token) throws NotFoundException, UnauthorizedException {
         Task<FirebaseToken> tokenTask = FirebaseAuth.getInstance().verifyIdToken(token);
 
         while (!tokenTask.isComplete()) {
         }
 
-        FirebaseToken firebaseToken = tokenTask.getResult();
+        FirebaseToken firebaseToken = null;
+        try {
+            firebaseToken = tokenTask.getResult();
+        } catch (IllegalArgumentException ex) {
+            throw new UnauthorizedException("Invalid token. Access Denied.");
+        }
 
         User user;
 
@@ -78,19 +78,19 @@ public class UserEndpoint {
         }
 
         if (user == null) {
-            throw new NotFoundException("Could not validate token. Access Denied.");
+            throw new NotFoundException("Could not find/create user for token. Access Denied.");
         }
         return user;
     }
 
     /**
-     * Updates users account {@code User}.
+     * Updates the authenticated users account {@link User}.
      *
-     * @param user  the desired state of the entity
+     * @param user  the desired state of the {@code User}
      * @param token token for current session
-     * @return the updated version of the entity
-     * @throws NotFoundException if the {@code profileId} does not correspond to an existing
-     *                           {@code User}
+     * @return the updated version of the {@code User}
+     * @throws NotFoundException if there is no {@code User} for the token.
+     * @throws UnauthorizedException if the token is invalid.
      */
     @ApiMethod(
             name = "update",

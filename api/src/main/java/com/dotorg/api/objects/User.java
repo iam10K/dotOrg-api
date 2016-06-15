@@ -20,7 +20,7 @@ import java.util.List;
 public class User {
 
     @Id
-    private String profileId;
+    private String userId;
 
     private String email;
 
@@ -30,34 +30,39 @@ public class User {
 
     private List<Key<Group>> groups;
 
-    private User() {}
+    public User() {}
 
-    public User(String profileId) {
-        this.profileId = profileId;
+    public User(String userId) {
+        this.userId = userId;
     }
 
-    public User(String profileId, String email, String name) {
-        this.profileId = profileId;
+    public User(String userId, String email, String name) {
+        this.userId = userId;
         this.email = email;
         this.name = name;
     }
 
-    public String getProfileId() {
-        return profileId;
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public String getUserId() {
+        return userId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setProfileId(String profileId) {
-        this.profileId = profileId;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public String getEmail() {
         return email;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setEmail(String email) {
         this.email = email;
     }
+
 
     public String getName() {
         return name;
@@ -67,6 +72,7 @@ public class User {
         this.name = name;
     }
 
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -75,6 +81,8 @@ public class User {
         this.imageUrl = imageUrl;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Key<Group>> getGroups() {
         return groups;
     }

@@ -34,6 +34,7 @@ public class Chat {
 
     private Chat() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getChatId() {
         return chatId;
     }
@@ -43,6 +44,7 @@ public class Chat {
         this.chatId = chatId;
     }
 
+
     public String getName() {
         return name;
     }
@@ -50,6 +52,7 @@ public class Chat {
     public void setName(String name) {
         this.name = name;
     }
+
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Group> getGroupId() {
@@ -61,6 +64,8 @@ public class Chat {
         this.groupId = groupId;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Chatter> getChatters() {
         return chatters;
     }

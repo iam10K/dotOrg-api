@@ -30,13 +30,14 @@ public class Poll {
 
     private List<Integer> votes;
 
-    private Key<Member> memberId;
+    private Long memberId;
 
     @Parent
     private Key<Group> groupId;
 
     private Poll() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getPollId() {
         return pollId;
     }
@@ -46,6 +47,7 @@ public class Poll {
         this.pollId = pollId;
     }
 
+
     public String getTitle() {
         return title;
     }
@@ -53,6 +55,7 @@ public class Poll {
     public void setTitle(String title) {
         this.title = title;
     }
+
 
     public String getDescription() {
         return description;
@@ -62,6 +65,7 @@ public class Poll {
         this.description = description;
     }
 
+
     public List<String> getQuestions() {
         return questions;
     }
@@ -69,6 +73,7 @@ public class Poll {
     public void setQuestions(List<String> questions) {
         this.questions = questions;
     }
+
 
     public List<Integer> getVotes() {
         return votes;
@@ -78,14 +83,16 @@ public class Poll {
         this.votes = votes;
     }
 
-    public Key<Member> getMemberId() {
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public Long getMemberId() {
         return memberId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setMemberId(Key<Member> memberId) {
+    public void setMemberId(Long memberId) {
         this.memberId = memberId;
     }
+
 
     public Key<Group> getGroupId() {
         return groupId;

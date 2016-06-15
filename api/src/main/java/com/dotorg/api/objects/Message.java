@@ -5,6 +5,7 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Parent;
 
 import java.util.Date;
 import java.util.List;
@@ -25,7 +26,10 @@ public class Message {
 
     private Date createdAt;
 
-    private Key<Member> memberId;
+    @Parent
+    private Key<Chat> chatId;
+
+    private Long memberId;
 
     private String text;
 
@@ -33,6 +37,7 @@ public class Message {
 
     private Message() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMessageId() {
         return messageId;
     }
@@ -42,6 +47,7 @@ public class Message {
         this.messageId = messageId;
     }
 
+
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -50,14 +56,26 @@ public class Message {
         this.createdAt = createdAt;
     }
 
-    public Key<Member> getMemberId() {
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Chat> getChatId() {
+        return chatId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setChatId(Key<Chat> chatId) {
+        this.chatId = chatId;
+    }
+
+
+    public Long getMemberId() {
         return memberId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setMemberId(Key<Member> memberId) {
+    public void setMemberId(Long memberId) {
         this.memberId = memberId;
     }
+
 
     public String getText() {
         return text;
@@ -66,6 +84,7 @@ public class Message {
     public void setText(String text) {
         this.text = text;
     }
+
 
     public List<Object> getAttachments() {
         return attachments;

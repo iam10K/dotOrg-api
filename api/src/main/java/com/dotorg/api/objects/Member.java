@@ -21,10 +21,10 @@ public class Member {
     @Id
     private Long memberId;
 
-    private Key<Group> groupId;
+    private Long groupId;
 
     @Parent
-    private Key<User> profileId;
+    private Key<User> userId;
 
     private String memberRole;
     private String nickname;
@@ -32,6 +32,7 @@ public class Member {
 
     private Member() {}
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMemberId() {
         return memberId;
     }
@@ -41,23 +42,27 @@ public class Member {
         this.memberId = memberId;
     }
 
-    public Key<Group> getGroupId() {
+
+    public Long getGroupId() {
         return groupId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Key<Group> groupId) {
+    public void setGroupId(Long groupId) {
         this.groupId = groupId;
     }
 
-    public Key<User> getProfileId() {
-        return profileId;
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<User> getUserId() {
+        return userId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setProfileId(Key<User> profileId) {
-        this.profileId = profileId;
+    public void setUserId(Key<User> userId) {
+        this.userId = userId;
     }
+
 
     public String getMemberRole() {
         return memberRole;
@@ -67,6 +72,7 @@ public class Member {
         this.memberRole = memberRole;
     }
 
+
     public String getNickname() {
         return nickname;
     }
@@ -74,6 +80,7 @@ public class Member {
     public void setNickname(String nickname) {
         this.nickname = nickname;
     }
+
 
     public boolean isKicked() {
         return kicked;
