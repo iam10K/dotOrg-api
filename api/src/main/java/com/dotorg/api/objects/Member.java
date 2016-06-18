@@ -29,8 +29,10 @@ public class Member {
     private Integer memberRole;
     private String nickname;
     private boolean kicked;
+    private boolean leftGroup;
 
-    private Member() {}
+    private Member() {
+    }
 
     public Member(Key<Group> groupId, String userId, Integer memberRole, String nickname) {
         this.groupId = groupId;
@@ -97,5 +99,14 @@ public class Member {
 
     public void setKicked(boolean kicked) {
         this.kicked = kicked;
+    }
+
+
+    public boolean isLeftGroup() {
+        return leftGroup;
+    }
+
+    public void setLeftGroup(boolean leftGroup) {
+        this.leftGroup = leftGroup;
     }
 }

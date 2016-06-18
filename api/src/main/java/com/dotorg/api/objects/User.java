@@ -31,8 +31,10 @@ public class User {
     private String imageUrl;
 
     private List<Long> groups = new ArrayList<>();
+    private List<Long> previousGroups = new ArrayList<>();
 
-    public User() {}
+    public User() {
+    }
 
     public User(String userId) {
         this.userId = userId;
@@ -101,5 +103,40 @@ public class User {
         ofy().save().entity(this).now();
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void removeGroup(Long group) {
+        this.groups.remove(group);
+        ofy().save().entity(this).now();
+    }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public boolean rejoinGroup(Long groupId) {
+        if (previousGroups.remove(groupId)) {
+            groups.add(groupId);
+            ofy().save().entity(this).now();
+            return true;
+        }
+        return false;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public boolean leaveGroup(Long groupId) {
+        if (groups.remove(groupId)) {
+            previousGroups.add(groupId);
+            ofy().save().entity(this).now();
+            return true;
+        }
+        return false;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public List<Long> getPreviousGroups() {
+        return previousGroups;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setPreviousGroups(List<Long> previousGroups) {
+        this.previousGroups = previousGroups;
+    }
 }

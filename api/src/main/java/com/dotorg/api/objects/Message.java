@@ -37,7 +37,8 @@ public class Message {
 
     private List<Object> attachments;
 
-    private Message() {}
+    private Message() {
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMessageId() {

@@ -34,7 +34,8 @@ public class News {
     @Parent
     private Key<Group> groupId;
 
-    private News() {}
+    private News() {
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getNewsId() {

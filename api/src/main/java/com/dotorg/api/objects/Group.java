@@ -28,15 +28,27 @@ public class Group {
     private Date createdAt;
     private Date modifiedAt;
 
+    private String modifiedBy;
+
     private String name;
     private String description;
     private String imageUrl;
+
     private boolean inviteOnly;
 
+    @Ignore
+    private boolean makeOpen;
+
+    private String shareToken;
+
+    @Ignore
     private String joinUrl;
+
 
     @Ignore
     private List<Member> members = new ArrayList<>();
+    @Ignore
+    private Integer membersCount;
     @Ignore
     private List<Chat> chats = new ArrayList<>();
     @Ignore
@@ -46,9 +58,10 @@ public class Group {
     @Ignore
     private List<Event> events = new ArrayList<>();
 
-    private Group() {}
+    private Group() {
+    }
 
-    public void createNewGroup(String creator, String joinUrl) {
+    public void createNewGroup(String creator, String shareToken) {
         this.creator = creator;
         this.createdAt = new Date();
         this.modifiedAt = new Date();
@@ -56,9 +69,7 @@ public class Group {
         if (description == null)
             description = "";
 
-        if (inviteOnly) {
-
-        }
+        this.shareToken = shareToken;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
@@ -119,14 +130,34 @@ public class Group {
     }
 
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
-    public String getJoinUrl() {
-        return "https://dotorg.com/join_group/" + groupId + "/" + joinUrl;
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public boolean isMakeOpen() {
+        return makeOpen;
+    }
+
+    public void setMakeOpen(boolean makeOpen) {
+        this.makeOpen = makeOpen;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public String getShareToken() {
+        return shareToken;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setJoinUrl(String joinUrl) {
-        this.joinUrl = joinUrl;
+    public void setShareToken(String shareToken) {
+        this.shareToken = shareToken;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public String getJoinUrl() {
+        if (inviteOnly) {
+            return "";
+        } else {
+            return "https://dotorg.com/join_group/" + groupId + "/" + shareToken;
+        }
     }
 
 
@@ -149,6 +180,17 @@ public class Group {
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setModifiedAt(Date modifiedAt) {
         this.modifiedAt = modifiedAt;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public String getModifiedBy() {
+        return modifiedBy;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setModifiedBy(String modifiedBy) {
+        this.modifiedBy = modifiedBy;
     }
 
 

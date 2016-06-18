@@ -33,7 +33,8 @@ public class Chat {
     @Ignore
     private List<Chatter> chatters;
 
-    private Chat() {}
+    private Chat() {
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getChatId() {
