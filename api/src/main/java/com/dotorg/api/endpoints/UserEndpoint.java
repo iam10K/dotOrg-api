@@ -1,6 +1,7 @@
 package com.dotorg.api.endpoints;
 
 import com.dotorg.api.objects.User;
+import com.dotorg.api.utils.ValidationHelper;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
@@ -31,14 +32,12 @@ public class UserEndpoint {
 
     private static final Logger logger = Logger.getLogger(UserEndpoint.class.getName());
 
-    private static final int DEFAULT_LIST_LIMIT = 20;
-
     /**
      * Returns the authenticated {@link User}.
      *
      * @param token token for current session
      * @return the {@code User} that is currently authenticated.
-     * @throws NotFoundException if there is no {@code User} for the token.
+     * @throws NotFoundException     if there is no {@code User} for the token.
      * @throws UnauthorizedException if the token is invalid.
      */
     @ApiMethod(
@@ -48,7 +47,8 @@ public class UserEndpoint {
     public User me(HttpServletRequest req, @Named("token") String token) throws NotFoundException, UnauthorizedException {
         Task<FirebaseToken> tokenTask = FirebaseAuth.getInstance().verifyIdToken(token);
 
-        while (!tokenTask.isComplete()) {
+        while (true) {
+            if (tokenTask.isComplete()) break;
         }
 
         FirebaseToken firebaseToken = null;
@@ -82,57 +82,36 @@ public class UserEndpoint {
     /**
      * Updates the authenticated users account {@link User}.
      *
-     * @param user  the desired state of the {@code User}
-     * @param token token for current session
+     * @param newUser the desired state of the {@code User}
+     * @param token   token for current session
      * @return the updated version of the {@code User}
-     * @throws NotFoundException if there is no {@code User} for the token.
+     * @throws NotFoundException     if there is no {@code User} for the token.
      * @throws UnauthorizedException if the token is invalid.
      */
     @ApiMethod(
             name = "update",
             path = "users/update",
             httpMethod = ApiMethod.HttpMethod.PUT)
-    public User update(User user, @Named("token") String token) throws NotFoundException, UnauthorizedException {
-        // TODO: You should validate your ID parameter against your resource's ID here.
-        User validateUser = validateToken(token);
-        checkExists(validateUser.getUserId());
+    public User update(User newUser, @Named("token") String token) throws NotFoundException, UnauthorizedException {
+        User user = ValidationHelper.validateToken(token);
+
+        return updateUser(user, newUser);
+    }
+
+    private User updateUser(User user, User newUser) {
+        if (newUser.getName() != null) {
+            user.setName(newUser.getName());
+        }
+
+        if (newUser.getImageUrl() != null) {
+            user.setImageUrl(newUser.getImageUrl());
+        }
+
+        if (newUser.getEmail() != null) {
+            // TODO: Requires updating with firebase
+        }
+
         ofy().save().entity(user).now();
-        logger.info("Updated User: " + user);
-        return ofy().load().entity(user).now();
-    }
-
-    private void checkExists(String profileId) throws NotFoundException {
-        try {
-            ofy().load().type(User.class).id(profileId).safe();
-        } catch (com.googlecode.objectify.NotFoundException e) {
-            throw new NotFoundException("Could not find User with ID: " + profileId);
-        }
-    }
-
-    private User validateToken(String token) throws NotFoundException, UnauthorizedException {
-        Task<FirebaseToken> tokenTask = FirebaseAuth.getInstance().verifyIdToken(token);
-
-        while (!tokenTask.isComplete()) {
-        }
-
-        FirebaseToken firebaseToken = null;
-        try {
-            firebaseToken = tokenTask.getResult();
-        } catch (IllegalArgumentException ex) {
-            throw new UnauthorizedException("Invalid token. Access Denied.");
-        }
-
-        User user;
-
-        if (firebaseToken == null) {
-            throw new UnauthorizedException("Invalid token. Access Denied.");
-        }
-
-        user = ofy().load().type(User.class).id(firebaseToken.getUid()).now();
-
-        if (user == null) {
-            throw new NotFoundException("User not found for Token.");
-        }
         return user;
     }
 }
