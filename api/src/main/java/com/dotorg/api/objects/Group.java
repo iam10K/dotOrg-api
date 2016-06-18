@@ -6,6 +6,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class Group {
 
     @Id
     private Long groupId;
-    private Long creator;
+    private String creator;
 
     private Date createdAt;
     private Date modifiedAt;
@@ -30,22 +31,35 @@ public class Group {
     private String name;
     private String description;
     private String imageUrl;
-    private boolean publicGroup;
+    private boolean inviteOnly;
 
     private String joinUrl;
 
     @Ignore
-    private List<Member> members;
+    private List<Member> members = new ArrayList<>();
     @Ignore
-    private List<Chat> chats;
+    private List<Chat> chats = new ArrayList<>();
     @Ignore
-    private List<News> news;
+    private List<News> news = new ArrayList<>();
     @Ignore
-    private List<Poll> polls;
+    private List<Poll> polls = new ArrayList<>();
     @Ignore
-    private List<Event> events;
+    private List<Event> events = new ArrayList<>();
 
     private Group() {}
+
+    public void createNewGroup(String creator, String joinUrl) {
+        this.creator = creator;
+        this.createdAt = new Date();
+        this.modifiedAt = new Date();
+
+        if (description == null)
+            description = "";
+
+        if (inviteOnly) {
+
+        }
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getGroupId() {
@@ -85,29 +99,29 @@ public class Group {
     }
 
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
-    public Long getCreator() {
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public String getCreator() {
         return creator;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setCreator(Long creator) {
+    public void setCreator(String creator) {
         this.creator = creator;
     }
 
 
-    public boolean isPublicGroup() {
-        return publicGroup;
+    public boolean isInviteOnly() {
+        return inviteOnly;
     }
 
-    public void setPublicGroup(boolean publicGroup) {
-        this.publicGroup = publicGroup;
+    public void setInviteOnly(boolean inviteOnly) {
+        this.inviteOnly = inviteOnly;
     }
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public String getJoinUrl() {
-        return joinUrl;
+        return "https://dotorg.com/join_group/" + groupId + "/" + joinUrl;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
@@ -147,6 +161,13 @@ public class Group {
     public void setMembers(List<Member> members) {
         this.members = members;
     }
+
+/*    @ApiResourceProperty(ignored =  AnnotationBoolean.TRUE)
+    public Member addMember(User user) {
+        Member member = new Member(newGroup.getGroupId(), user.getUserId(), 0, user.getName());
+        ofy().save().entity(member).now();
+
+    }*/
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)

@@ -26,6 +26,8 @@ public class Message {
 
     private Date createdAt;
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Chat> chatId;
 
@@ -55,6 +57,7 @@ public class Message {
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
+
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Chat> getChatId() {

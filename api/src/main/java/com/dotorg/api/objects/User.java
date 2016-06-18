@@ -2,11 +2,13 @@ package com.dotorg.api.objects;
 
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.googlecode.objectify.ObjectifyService.ofy;
 
 /**
  * dotOrg-api
@@ -28,7 +30,7 @@ public class User {
 
     private String imageUrl;
 
-    private List<Key<Group>> groups;
+    private List<Long> groups = new ArrayList<>();
 
     public User() {}
 
@@ -40,6 +42,7 @@ public class User {
         this.userId = userId;
         this.email = email;
         this.name = name;
+        this.groups = new ArrayList<>();
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
@@ -83,18 +86,19 @@ public class User {
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
-    public List<Key<Group>> getGroups() {
+    public List<Long> getGroups() {
         return groups;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroups(List<Key<Group>> groups) {
+    public void setGroups(List<Long> groups) {
         this.groups = groups;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void addGroup(Key<Group> group) {
+    public void addGroup(Long group) {
         this.groups.add(group);
+        ofy().save().entity(this).now();
     }
 
 

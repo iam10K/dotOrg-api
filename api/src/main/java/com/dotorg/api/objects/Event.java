@@ -33,6 +33,7 @@ public class Event {
 
     private Long memberId;
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Group> groupId;
 

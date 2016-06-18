@@ -1,23 +1,24 @@
 package com.dotorg.api.endpoints;
 
+import com.dotorg.api.exceptions.InvalidParameterException;
 import com.dotorg.api.objects.Group;
+import com.dotorg.api.objects.Member;
 import com.dotorg.api.objects.User;
+import com.dotorg.api.utils.ValidationHelper;
 import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiNamespace;
 import com.google.api.server.spi.response.CollectionResponse;
 import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
-import com.google.appengine.api.datastore.QueryResultIterator;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
-import com.google.firebase.tasks.Task;
-import com.googlecode.objectify.cmd.Query;
+import com.googlecode.objectify.Key;
 
 import java.io.FileInputStream;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -36,7 +37,7 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 @Api(
         name = "groups",
         version = "v1",
-        resource = "groups",
+        resource = "group",
         namespace = @ApiNamespace(
                 ownerDomain = "objects.api.dotorg.com",
                 ownerName = "objects.api.dotorg.com",
@@ -76,18 +77,23 @@ public class GroupEndpoint {
             path = "groups/{groupId}",
             httpMethod = ApiMethod.HttpMethod.GET)
     public Group get(@Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
-        User user;
-        try {
-            user = validateToken(token);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not validate token.");
-        }
+        User user = ValidationHelper.validateToken(token);
 
+        // Load group by id
         logger.info("Getting Group with ID: " + groupId);
         Group group = ofy().load().type(Group.class).id(groupId).now();
         if (group == null) {
             throw new NotFoundException("Could not find Group with ID: " + groupId);
         }
+
+        // Validate user is in group, if not throw unauthorized
+        if (!user.getGroups().contains(groupId)) {
+            throw new UnauthorizedException("Authorized user does not have access to this group.");
+        }
+
+        // Load group data
+        loadGroup(group);
+
         return group;
     }
 
@@ -100,45 +106,35 @@ public class GroupEndpoint {
             name = "create",
             path = "groups",
             httpMethod = ApiMethod.HttpMethod.POST)
-    public Group create(Group group, @Named("token") String token) throws UnauthorizedException {
-        User user;
-        try {
-            user = validateToken(token);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not validate token.");
-        }
-        // Typically in a RESTful API a POST does not have a known ID (assuming the ID is used in the resource path).
-        // You should validate that group.groupId has not been set. If the ID type is not supported by the
-        // Objectify ID generator, e.g. long or String, then you should generate the unique ID yourself prior to saving.
-        //
-        // If your client provides the ID then you should probably use PUT instead.
-        ofy().save().entity(group).now();
-        logger.info("Created Group.");
+    public Group create(Group group,
+                        @Named("token") String token) throws UnauthorizedException, InvalidParameterException, NotFoundException {
+        User user = ValidationHelper.validateToken(token);
 
-        return ofy().load().entity(group).now();
+        ValidationHelper.validateNewGroup(group);
+
+        return createGroup(group, user);
     }
 
     /**
      * Updates an existing {@code Group}.
      *
-     * @param groupId the ID of the entity to be updated
      * @param group   the desired state of the entity
+     * @param groupId the ID of the entity to be updated
      * @param token  token for current session
      * @return the updated version of the entity
      * @throws NotFoundException if the {@code groupId} does not correspond to an existing
      *                           {@code Group}
+     * @throws UnauthorizedException
      */
     @ApiMethod(
             name = "update",
             path = "groups/{groupId}",
             httpMethod = ApiMethod.HttpMethod.PUT)
-    public Group update(@Named("groupId") Long groupId, Group group, @Named("token") String token) throws NotFoundException, UnauthorizedException {
-        User user;
-        try {
-            user = validateToken(token);
-        } catch (Exception ex) {
-            throw ex;
-        }
+    public Group update(Group group,
+                        @Named("groupId") Long groupId,
+                        @Named("token") String token) throws NotFoundException, UnauthorizedException {
+        User user = ValidationHelper.validateToken(token);
+
         // TODO: You should validate your ID parameter against your resource's ID here.
         checkExists(groupId);
         ofy().save().entity(group).now();
@@ -158,13 +154,9 @@ public class GroupEndpoint {
             name = "remove",
             path = "groups/{groupId}",
             httpMethod = ApiMethod.HttpMethod.DELETE)
-    public void remove(@Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
-        User user;
-        try {
-            user = validateToken(token);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not validate token.");
-        }
+    public void remove(@Named("groupId") Long groupId,
+                       @Named("token") String token) throws NotFoundException, UnauthorizedException {
+        User user = ValidationHelper.validateToken(token);
 
         checkExists(groupId);
         ofy().delete().type(Group.class).id(groupId).now();
@@ -182,25 +174,28 @@ public class GroupEndpoint {
             name = "list",
             path = "groups",
             httpMethod = ApiMethod.HttpMethod.GET)
-    public CollectionResponse<Group> list(@Nullable @Named("limit") Integer limit, @Named("token") String token) throws UnauthorizedException {
-        User user;
-        try {
-            user = validateToken(token);
-        } catch (Exception ex) {
-            throw new UnauthorizedException("Could not validate token.");
-        }
+    public CollectionResponse<Group> list(@Nullable @Named("cursor") Integer cursor,
+                                          @Nullable @Named("limit") Integer limit,
+                                          @Named("token") String token) throws UnauthorizedException, NotFoundException {
+        User user = ValidationHelper.validateToken(token);
 
         limit = limit == null ? DEFAULT_LIST_LIMIT : limit;
-        Query<Group> query = ofy().load().type(Group.class).limit(limit);
-        QueryResultIterator<Group> queryIterator = query.iterator();
-        List<Group> groupList = new ArrayList<Group>(limit);
-        while (queryIterator.hasNext()) {
-            groupList.add(queryIterator.next());
-        }
-        return CollectionResponse.<Group>builder().setItems(groupList).setNextPageToken(queryIterator.getCursor().toWebSafeString()).build();
+        cursor = cursor == null ? 0 : cursor;
 
-        // TODO: Get list of groups based on authenticated user, then for each group set data like list of members, chats, etc.
-        // TODO: Limit to 5 groups per page
+        // Get list of Keys based on limit and cursor
+        List<Long> idList = new ArrayList<>(limit);
+        for (int i = cursor; i < limit && i < user.getGroups().size(); i++) {
+            idList.add(user.getGroups().get(i));
+        }
+
+        // Load groups by id
+        Collection<Group> groupList = ofy().load().type(Group.class).ids(idList).values();
+        // Load group data
+        for (Group group : groupList) {
+            loadGroup(group);
+        }
+
+        return CollectionResponse.<Group>builder().setItems(groupList).build();
     }
 
     private void checkExists(Long groupId) throws NotFoundException {
@@ -211,25 +206,47 @@ public class GroupEndpoint {
         }
     }
 
-    private User validateToken (String token) throws NotFoundException, UnauthorizedException {
-        Task<FirebaseToken> tokenTask = FirebaseAuth.getInstance().verifyIdToken(token);
 
-        while (!tokenTask.isComplete()) {
-        }
 
-        FirebaseToken firebaseToken = tokenTask.getResult();
-
-        User user;
-
-        if (firebaseToken == null) {
-            throw new UnauthorizedException("Invalid token. Access Denied.");
-        }
-
-        user = ofy().load().type(User.class).id(firebaseToken.getUid()).now();
-
-        if (user == null) {
-            throw new NotFoundException("User not found for Token.");
-        }
-        return user;
+    private void loadGroup(Group group) {
+        // TODO: Load group members, chats, polls, events, news
     }
+
+    private Group createGroup(Group group, User user) {
+        // Set group created at
+        group.createNewGroup(user.getUserId(), group.isInviteOnly() ? "" : generateJoinToken());
+
+        // Use objectify to create entity(Group)
+        Key<Group> groupKey = ofy().save().entity(group).now();
+
+        // Load the new group based on Key
+        Group newGroup = ofy().load().key(groupKey).now();
+        logger.info("Created Group: " + newGroup.getGroupId());
+
+        // Add member to group
+        Member member = new Member(groupKey, user.getUserId(), 0, user.getName());
+        // Use objectify to create entity(Member)
+        ofy().save().entity(member).now();
+
+        // Add member to group list
+        List<Member> members = new ArrayList<>();
+        members.add(member);
+        newGroup.setMembers(members);
+
+        // Add group to user
+        user.addGroup(group.getGroupId());
+
+        return newGroup;
+    }
+
+    private String generateJoinToken () {
+        char[] chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ234567890".toCharArray();
+        SecureRandom random2 = new SecureRandom();
+        String s = "";
+        for (int i = 0; i < 6; i++) {
+            s += chars[random2.nextInt(chars.length)];
+        }
+        return s;
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.dotorg.api;
+package com.dotorg.api.utils;
 
 import com.dotorg.api.objects.Chat;
 import com.dotorg.api.objects.Chatter;
@@ -9,12 +9,13 @@ import com.dotorg.api.objects.Message;
 import com.dotorg.api.objects.News;
 import com.dotorg.api.objects.Poll;
 import com.dotorg.api.objects.User;
-import com.googlecode.objectify.Objectify;
-import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.ObjectifyService;
 
-public class OfyHelper {
-    static {
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+
+public class OfyHelper implements ServletContextListener {
+    public void contextInitialized(ServletContextEvent event) {
         ObjectifyService.register(Chat.class);
         ObjectifyService.register(Chatter.class);
         ObjectifyService.register(Event.class);
@@ -26,12 +27,7 @@ public class OfyHelper {
         ObjectifyService.register(User.class);
     }
 
-    public static Objectify ofy() {
-        return ObjectifyService.ofy();
-        //since v.4.0  use ObjectifyService.ofy();
-    }
-
-    public static ObjectifyFactory factory() {
-        return ObjectifyService.factory();
+    public void contextDestroyed(ServletContextEvent event) {
+        // App Engine does not currently invoke this method.
     }
 }

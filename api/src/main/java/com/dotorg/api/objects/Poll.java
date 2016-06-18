@@ -32,6 +32,7 @@ public class Poll {
 
     private Long memberId;
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Group> groupId;
 
@@ -94,6 +95,7 @@ public class Poll {
     }
 
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Group> getGroupId() {
         return groupId;
     }

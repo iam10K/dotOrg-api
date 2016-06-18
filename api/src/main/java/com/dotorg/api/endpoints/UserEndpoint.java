@@ -9,7 +9,6 @@ import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.tasks.Task;
-import com.googlecode.objectify.ObjectifyService;
 
 import java.util.logging.Logger;
 
@@ -31,11 +30,8 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 public class UserEndpoint {
 
     private static final Logger logger = Logger.getLogger(UserEndpoint.class.getName());
-    private static final int DEFAULT_LIST_LIMIT = 20;
 
-    static {
-        ObjectifyService.register(User.class);
-    }
+    private static final int DEFAULT_LIST_LIMIT = 20;
 
     /**
      * Returns the authenticated {@link User}.
@@ -119,7 +115,12 @@ public class UserEndpoint {
         while (!tokenTask.isComplete()) {
         }
 
-        FirebaseToken firebaseToken = tokenTask.getResult();
+        FirebaseToken firebaseToken = null;
+        try {
+            firebaseToken = tokenTask.getResult();
+        } catch (IllegalArgumentException ex) {
+            throw new UnauthorizedException("Invalid token. Access Denied.");
+        }
 
         User user;
 

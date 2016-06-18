@@ -21,16 +21,24 @@ public class Member {
     @Id
     private Long memberId;
 
-    private Long groupId;
-
     @Parent
-    private Key<User> userId;
+    private Key<Group> groupId;
 
-    private String memberRole;
+    private String userId;
+
+    private Integer memberRole;
     private String nickname;
     private boolean kicked;
 
     private Member() {}
+
+    public Member(Key<Group> groupId, String userId, Integer memberRole, String nickname) {
+        this.groupId = groupId;
+        this.userId = userId;
+        this.memberRole = memberRole;
+        this.nickname = nickname;
+        this.kicked = false;
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMemberId() {
@@ -43,32 +51,33 @@ public class Member {
     }
 
 
-    public Long getGroupId() {
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Group> getGroupId() {
         return groupId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Long groupId) {
+    public void setGroupId(Key<Group> groupId) {
         this.groupId = groupId;
     }
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<User> getUserId() {
+    public String getUserId() {
         return userId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setUserId(Key<User> userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
 
-    public String getMemberRole() {
+    public Integer getMemberRole() {
         return memberRole;
     }
 
-    public void setMemberRole(String memberRole) {
+    public void setMemberRole(Integer memberRole) {
         this.memberRole = memberRole;
     }
 

@@ -26,6 +26,7 @@ public class Chat {
 
     private String name;
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Group> groupId;
 

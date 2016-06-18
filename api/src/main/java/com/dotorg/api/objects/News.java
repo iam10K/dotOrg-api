@@ -30,6 +30,7 @@ public class News {
 
     private List<Object> attachments;
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Group> groupId;
 
