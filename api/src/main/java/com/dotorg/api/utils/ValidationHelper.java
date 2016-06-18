@@ -3,6 +3,7 @@ package com.dotorg.api.utils;
 import com.dotorg.api.exceptions.InvalidParameterException;
 import com.dotorg.api.objects.Group;
 import com.dotorg.api.objects.User;
+import com.google.api.server.spi.response.BadRequestException;
 import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.firebase.auth.FirebaseAuth;
@@ -23,10 +24,11 @@ public class ValidationHelper {
 
     /**
      * Attempt to validate new {@code group} for creation
+     *
      * @param group is group to validate, cannot be null
      * @throws InvalidParameterException thrown if the group is invalid
      */
-    public static void validateNewGroup (Group group) throws InvalidParameterException {
+    public static void validateNewGroup(Group group) throws InvalidParameterException {
         // Name is not null
         if (group.getName() == null) {
             throw new InvalidParameterException("Group name cannot be empty.");
@@ -51,14 +53,41 @@ public class ValidationHelper {
 
     }
 
+    public static void validateUserInGroup(User user, Long groupId) throws UnauthorizedException {
+        // Validate user is in group, if not throw unauthorized
+        if (!user.getGroups().contains(groupId)) {
+            throw new UnauthorizedException("Authorized user does not have access to this group.");
+        }
+    }
+
+    public static void validateUserNotInGroup(User user, Long groupId) throws BadRequestException {
+        // Validate user is in group, if yes throw unauthorized
+        if (user.getGroups().contains(groupId)) {
+            throw new BadRequestException("Authorized user is already in this group.");
+        }
+    }
+
+    public static void validateUserWasInGroup(User user, Long groupId) throws UnauthorizedException {
+        // Validate user was in group, if not throw unauthorized
+        if (!user.getPreviousGroups().contains(groupId)) {
+            throw new UnauthorizedException("Authorized user does not have access to this group.");
+        }
+    }
+
+    public static void validateUserAsGroupOwner(User user, Group group) throws UnauthorizedException {
+        // Validate user is creator of group
+        if (!group.getCreator().equals(user.getUserId())) {
+            throw new UnauthorizedException("Authorized user is not the owner of this group.");
+        }
+    }
+
     /**
-     *
      * @param token
      * @return
      * @throws NotFoundException
      * @throws UnauthorizedException
      */
-    public static User validateToken (String token) throws NotFoundException, UnauthorizedException {
+    public static User validateToken(String token) throws NotFoundException, UnauthorizedException {
         Task<FirebaseToken> tokenTask = FirebaseAuth.getInstance().verifyIdToken(token);
 
         while (true) {
@@ -71,7 +100,6 @@ public class ValidationHelper {
         } catch (IllegalArgumentException ex) {
             throw new UnauthorizedException("Invalid token. Access Denied.");
         }
-
         User user;
 
         if (firebaseToken == null) {
