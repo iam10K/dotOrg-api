@@ -2,6 +2,7 @@ package com.dotorg.api.objects;
 
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
@@ -65,11 +66,24 @@ public class Group {
         this.creator = creator;
         this.createdAt = new Date();
         this.modifiedAt = new Date();
+        this.modifiedBy = creator;
 
-        if (description == null)
+        if (description == null) {
             description = "";
-
+        }
+        this.inviteOnly = true;
         this.shareToken = shareToken;
+
+        members = new ArrayList<>();
+        chats = new ArrayList<>();
+        news = new ArrayList<>();
+        polls = new ArrayList<>();
+        events = new ArrayList<>();
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Group> getKey() {
+        return Key.create(Group.class, groupId);
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
@@ -206,7 +220,7 @@ public class Group {
 
 /*    @ApiResourceProperty(ignored =  AnnotationBoolean.TRUE)
     public Member addMember(User user) {
-        Member member = new Member(newGroup.getGroupId(), user.getUserId(), 0, user.getName());
+        Member member = new Member(newGroup.getGroupId(), user.getUserKey(), 0, user.getName());
         ofy().save().entity(member).now();
 
     }*/

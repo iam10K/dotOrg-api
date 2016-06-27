@@ -7,6 +7,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -28,13 +29,18 @@ public class News {
 
     private Long memberId;
 
-    private List<Object> attachments;
+    private Collection<Object> attachments;
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
-    private Key<Group> groupId;
+    private Key<Group> groupKey;
 
     private News() {
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<News> getKey() {
+        return Key.create(News.class, newsId);
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
@@ -75,8 +81,13 @@ public class News {
         this.memberId = memberId;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Member> getMemberKey() {
+        return Key.create(Member.class, memberId);
+    }
 
-    public List<Object> getAttachments() {
+
+    public Collection<Object> getAttachments() {
         return attachments;
     }
 
@@ -86,12 +97,12 @@ public class News {
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Group> getGroupId() {
-        return groupId;
+    public Key<Group> getGroupKey() {
+        return groupKey;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Key<Group> groupId) {
-        this.groupId = groupId;
+    public void setGroupKey(Key<Group> groupKey) {
+        this.groupKey = groupKey;
     }
 }

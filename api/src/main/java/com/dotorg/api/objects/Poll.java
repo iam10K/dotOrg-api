@@ -7,7 +7,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * dotOrg-api
@@ -26,17 +26,24 @@ public class Poll {
     private String title;
     private String description;
 
-    private List<String> questions;
+    private Collection<String> questions;
 
-    private List<Integer> votes;
+    private Collection<Integer> votes;
+
+    //private boolean anonymous;
 
     private Long memberId;
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
-    private Key<Group> groupId;
+    private Key<Group> groupKey;
 
     private Poll() {
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Poll> getKey() {
+        return Key.create(Poll.class, pollId);
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
@@ -68,22 +75,31 @@ public class Poll {
     }
 
 
-    public List<String> getQuestions() {
+    public Collection<String> getQuestions() {
         return questions;
     }
 
-    public void setQuestions(List<String> questions) {
+    public void setQuestions(Collection<String> questions) {
         this.questions = questions;
     }
 
 
-    public List<Integer> getVotes() {
+    public Collection<Integer> getVotes() {
         return votes;
     }
 
-    public void setVotes(List<Integer> votes) {
+    public void setVotes(Collection<Integer> votes) {
         this.votes = votes;
     }
+
+
+    /*public boolean isAnonymous() {
+        return anonymous;
+    }
+
+    public void setAnonymous(boolean anonymous) {
+        this.anonymous = anonymous;
+    }*/
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMemberId() {
@@ -95,14 +111,19 @@ public class Poll {
         this.memberId = memberId;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Member> getMemberKey() {
+        return Key.create(Member.class, memberId);
+    }
+
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Group> getGroupId() {
-        return groupId;
+    public Key<Group> getGroupKey() {
+        return groupKey;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Key<Group> groupId) {
-        this.groupId = groupId;
+    public void setGroupKey(Key<Group> groupKey) {
+        this.groupKey = groupKey;
     }
 }

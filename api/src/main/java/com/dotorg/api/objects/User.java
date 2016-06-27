@@ -2,8 +2,12 @@ package com.dotorg.api.objects;
 
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
+import com.google.appengine.api.datastore.PhoneNumber;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.Index;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,14 +28,20 @@ public class User {
     @Id
     private String userId;
 
+    @Index
     private String email;
+
+    @Index
+    private PhoneNumber phoneNumber;
 
     private String name;
 
     private String imageUrl;
 
-    private List<Long> groups = new ArrayList<>();
-    private List<Long> previousGroups = new ArrayList<>();
+    @Ignore
+    private List<Long> groups;
+    @Ignore
+    private List<Long> previousGroups;
 
     public User() {
     }
@@ -48,6 +58,11 @@ public class User {
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<User> getKey() {
+        return Key.create(User.class, userId);
+    }
+
+
     public String getUserId() {
         return userId;
     }
@@ -69,6 +84,14 @@ public class User {
     }
 
 
+    public PhoneNumber getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(PhoneNumber phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
     public String getName() {
         return name;
     }
@@ -89,6 +112,9 @@ public class User {
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Long> getGroups() {
+        if (groups == null) {
+            loadGroups();
+        }
         return groups;
     }
 
@@ -97,46 +123,52 @@ public class User {
         this.groups = groups;
     }
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void addGroup(Long group) {
-        this.groups.add(group);
-        ofy().save().entity(this).now();
-    }
-
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void removeGroup(Long group) {
-        this.groups.remove(group);
-        ofy().save().entity(this).now();
-    }
-
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public boolean rejoinGroup(Long groupId) {
-        if (previousGroups.remove(groupId)) {
-            groups.add(groupId);
-            ofy().save().entity(this).now();
-            return true;
-        }
-        return false;
-    }
-
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public boolean leaveGroup(Long groupId) {
-        if (groups.remove(groupId)) {
-            previousGroups.add(groupId);
-            ofy().save().entity(this).now();
-            return true;
-        }
-        return false;
-    }
-
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public List<Long> getPreviousGroups() {
+        if (previousGroups == null) {
+            loadGroups();
+        }
         return previousGroups;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setPreviousGroups(List<Long> previousGroups) {
         this.previousGroups = previousGroups;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void loadGroups() {
+        groups = new ArrayList<>();
+        previousGroups = new ArrayList<>();
+        List<Membership> memberships = getMemberships();
+        groups.clear();
+        previousGroups.clear();
+        for (Membership membership : memberships) {
+            if (membership.isPrevious()) {
+                previousGroups.add(membership.getGroupId());
+            } else {
+                groups.add(membership.getGroupId());
+            }
+        }
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Member addGroup(Long groupId) {
+        // Add member to group
+        Member member = new Member(Key.create(Group.class, groupId), getUserId(), 2, getName());
+        // Use objectify to create entity(Member)
+        ofy().save().entity(member).now();
+
+        member = ofy().load().entity(member).now();
+
+        Membership membership = new Membership(member.getMemberId(), groupId, getKey());
+        ofy().save().entity(membership).now();
+        return member;
+    }
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public List<Membership> getMemberships() {
+        return ofy().load().type(Membership.class).ancestor(this).list();
     }
 }

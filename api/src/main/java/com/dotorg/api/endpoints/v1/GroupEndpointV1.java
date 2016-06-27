@@ -1,29 +1,30 @@
-package com.dotorg.api.endpoints;
+package com.dotorg.api.endpoints.v1;
 
 import com.dotorg.api.exceptions.InvalidParameterException;
 import com.dotorg.api.objects.Chat;
+import com.dotorg.api.objects.ChatMembership;
+import com.dotorg.api.objects.Chatter;
 import com.dotorg.api.objects.Event;
 import com.dotorg.api.objects.Group;
 import com.dotorg.api.objects.Member;
+import com.dotorg.api.objects.Membership;
+import com.dotorg.api.objects.Message;
 import com.dotorg.api.objects.News;
 import com.dotorg.api.objects.Poll;
 import com.dotorg.api.objects.User;
 import com.dotorg.api.utils.ValidationHelper;
-import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
-import com.google.api.server.spi.config.ApiNamespace;
+import com.google.api.server.spi.config.ApiReference;
 import com.google.api.server.spi.response.BadRequestException;
 import com.google.api.server.spi.response.CollectionResponse;
 import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.googlecode.objectify.Key;
 
-import java.io.FileInputStream;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -39,36 +40,14 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
  * <p/>
  * DO NOT deploy this code unchanged as part of a real application to real users.
  */
-@Api(
-        name = "groups",
-        version = "v1",
-        resource = "group",
-        namespace = @ApiNamespace(
-                ownerDomain = "objects.api.dotorg.com",
-                ownerName = "objects.api.dotorg.com",
-                packagePath = ""
-        )
-)
-public class GroupEndpoint {
 
-    private static final Logger logger = Logger.getLogger(GroupEndpoint.class.getName());
+@ApiReference(BaseEndpointV1.class)
+public class GroupEndpointV1 {
+
+    private static final Logger logger = Logger.getLogger(GroupEndpointV1.class.getName());
 
     private static final int DEFAULT_LIST_LIMIT = 10;
     private static final int DEFAULT_LONG_LIST_LIMIT = 200;
-
-    private FirebaseOptions options;
-
-    public GroupEndpoint() {
-        try {
-            options = new FirebaseOptions.Builder()
-                    .setServiceAccount(new FileInputStream("WEB-INF/firebase/dotOrg-API.json"))
-                    .setDatabaseUrl("https://dotorg-api.firebaseio.com/")
-                    .build();
-            FirebaseApp.initializeApp(options);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Returns the {@link Group} with the corresponding ID.
@@ -79,7 +58,7 @@ public class GroupEndpoint {
      * @throws NotFoundException if there is no {@code Group} with the provided ID.
      */
     @ApiMethod(
-            name = "get",
+            name = "groups.get",
             path = "groups/{groupId}",
             httpMethod = ApiMethod.HttpMethod.GET)
     public Group get(@Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
@@ -106,7 +85,7 @@ public class GroupEndpoint {
      * @param token token for current session
      */
     @ApiMethod(
-            name = "create",
+            name = "groups.create",
             path = "groups",
             httpMethod = ApiMethod.HttpMethod.POST)
     public Group create(Group group, @Named("token") String token) throws UnauthorizedException, InvalidParameterException, NotFoundException {
@@ -129,18 +108,21 @@ public class GroupEndpoint {
      * @throws UnauthorizedException
      */
     @ApiMethod(
-            name = "update",
+            name = "groups.update",
             path = "groups/{groupId}",
             httpMethod = ApiMethod.HttpMethod.PUT)
     public Group update(Group newGroup, @Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
         User user = ValidationHelper.validateToken(token);
+
+        // FUTURE: Permissions to change group
+        ValidationHelper.validateUserInGroup(user, groupId);
 
         Group group = ofy().load().type(Group.class).id(groupId).now();
         if (group == null) {
             throw new NotFoundException("Could not find Group with ID: " + groupId);
         }
 
-        return updateGroup(group, newGroup);
+        return updateGroup(group, newGroup, user);
     }
 
     /**
@@ -152,10 +134,10 @@ public class GroupEndpoint {
      *                           {@code Group}
      */
     @ApiMethod(
-            name = "remove",
+            name = "groups.delete",
             path = "groups/{groupId}",
             httpMethod = ApiMethod.HttpMethod.DELETE)
-    public void remove(@Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
+    public void delete(@Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
         User user = ValidationHelper.validateToken(token);
 
         ValidationHelper.validateUserInGroup(user, groupId);
@@ -165,9 +147,10 @@ public class GroupEndpoint {
             throw new NotFoundException("Could not find Group with ID: " + groupId);
         }
 
-        ValidationHelper.validateUserAsGroupOwner(user, group);
+        // FUTURE: Admin permission to delete group
+        ValidationHelper.validateUserIsGroupOwner(user, group);
 
-        ofy().delete().type(Group.class).id(groupId).now();
+        removeGroup(group, user);
         logger.info(user.getUserId() + ", Deleted group with ID: " + groupId);
     }
 
@@ -179,7 +162,7 @@ public class GroupEndpoint {
      * @return a response that encapsulates the result list and the next page token/cursor
      */
     @ApiMethod(
-            name = "list",
+            name = "groups.list",
             path = "groups",
             httpMethod = ApiMethod.HttpMethod.GET)
     public CollectionResponse<Group> list(@Nullable @Named("cursor") Integer cursor, @Nullable @Named("limit") Integer limit, @Named("token") String token) throws UnauthorizedException, NotFoundException {
@@ -205,43 +188,42 @@ public class GroupEndpoint {
     }
 
     @ApiMethod(
-            name = "join",
+            name = "groups.join",
             path = "groups/{groupId}/join/{shareToken}",
             httpMethod = ApiMethod.HttpMethod.POST)
     public Group join(@Named("groupId") Long groupId, @Named("shareToken") String shareToken, @Named("token") String token) throws NotFoundException, UnauthorizedException, BadRequestException {
         User user = ValidationHelper.validateToken(token);
 
-        ValidationHelper.validateUserNotInGroup(user, groupId);
-
         Group group = ofy().load().type(Group.class).id(groupId).now();
         if (group == null) {
             throw new NotFoundException("Could not find Group with ID: " + groupId);
         }
+
+        ValidationHelper.validateUserNotInGroup(user, groupId);
 
         return joinGroup(group, user, shareToken);
     }
 
     @ApiMethod(
-            name = "rejoin",
+            name = "groups.rejoin",
             path = "groups/{groupId}/join",
             httpMethod = ApiMethod.HttpMethod.POST)
     public Group rejoin(@Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException, BadRequestException {
         User user = ValidationHelper.validateToken(token);
 
-        ValidationHelper.validateUserNotInGroup(user, groupId);
-
-        ValidationHelper.validateUserWasInGroup(user, groupId);
-
         Group group = ofy().load().type(Group.class).id(groupId).now();
         if (group == null) {
             throw new NotFoundException("Could not find Group with ID: " + groupId);
         }
+
+        ValidationHelper.validateUserWasInGroup(user, groupId);
 
         return rejoinGroup(group, user);
     }
 
     private void loadGroupData(Group group) {
         // Load data for each of the following arrays, Limit to not send too large of a response
+        // TODO: Change this to be more in line with gme
         group.setMembers(ofy().load().type(Member.class).ancestor(group).limit(DEFAULT_LONG_LIST_LIMIT).list());
         group.setChats(ofy().load().type(Chat.class).ancestor(group).limit(DEFAULT_LONG_LIST_LIMIT).list());
         group.setPolls(ofy().load().type(Poll.class).ancestor(group).limit(DEFAULT_LONG_LIST_LIMIT).list());
@@ -251,7 +233,7 @@ public class GroupEndpoint {
 
     private Group createGroup(Group group, User user) {
         // Set group created at
-        group.createNewGroup(user.getUserId(), group.isInviteOnly() ? "" : generateJoinToken());
+        group.createNewGroup(user.getUserId(), group.isMakeOpen() ? "" : generateJoinToken());
 
         // Use objectify to create entity(Group)
         Key<Group> groupKey = ofy().save().entity(group).now();
@@ -260,43 +242,45 @@ public class GroupEndpoint {
         Group newGroup = ofy().load().key(groupKey).now();
         logger.info("Created Group: " + newGroup.getGroupId());
 
-        // Add member to group
-        Member member = new Member(groupKey, user.getUserId(), 0, user.getName());
-        // Use objectify to create entity(Member)
-        ofy().save().entity(member).now();
+        // Add user to group
+        Member member = user.addGroup(group.getGroupId());
 
         // Add member to group list
+        // TODO: This will change with above todo also
         List<Member> members = new ArrayList<>();
         members.add(member);
         newGroup.setMembers(members);
 
-        // Add group to user
-        user.addGroup(group.getGroupId());
-
         return newGroup;
     }
 
-    private Group updateGroup(Group group, Group newGroup) {
+    private Group updateGroup(Group group, Group newGroup, User user) {
+        boolean changes = false;
+
         // If group name is being changed
         if (newGroup.getName() != null) {
+            changes = true;
             group.setName(newGroup.getName());
             // TODO: Push notification, maybe add message in news?
         }
 
         // If description is being changed
         if (newGroup.getDescription() != null) {
+            changes = true;
             group.setDescription(newGroup.getDescription());
             // TODO: Push notification, maybe add message in news?
         }
 
         // If image url is being set
         if (newGroup.getImageUrl() != null) {
+            changes = true;
             group.setImageUrl(newGroup.getImageUrl());
             // TODO: Push notification, updated group image
         }
 
         // If the group will be make private
         if (newGroup.isInviteOnly() && !group.isInviteOnly()) {
+            changes = true;
             group.setInviteOnly(true);
             group.setShareToken("");
             // TODO: Push notification group is now private
@@ -304,14 +288,38 @@ public class GroupEndpoint {
 
         // If the group will be made public
         if (newGroup.isMakeOpen()) {
+            changes = true;
             group.setInviteOnly(false);
             group.setShareToken(generateJoinToken());
             // TODO: Push notification group is now public
         }
 
-        ofy().save().entity(group).now();
-        logger.info("Updated Group: " + group.getGroupId());
+        if (changes) {
+            group.setModifiedAt(new Date());
+            group.setModifiedBy(user.getUserId());
+            ofy().save().entity(group).now();
+            logger.info("Updated Group: " + group.getGroupId());
+        }
         return group;
+    }
+
+    private void removeGroup(Group group, User user) {
+        // Delete all data belonging to the group
+        ofy().delete().type(Member.class).parent(group);
+        for (Chat chat : ofy().load().type(Chat.class).ancestor(group)) {
+            List<ChatMembership> chatMembershipList = ofy().load().type(ChatMembership.class).filter("chatId", chat.getChatId()).list();
+            ofy().delete().entities(chatMembershipList).now();
+            ofy().delete().type(Chatter.class).parent(chat);
+            ofy().delete().type(Message.class).parent(chat);
+            ofy().delete().entity(chat);
+        }
+        ofy().delete().type(Poll.class).parent(group);
+        ofy().delete().type(Event.class).parent(group);
+        ofy().delete().type(News.class).parent(group);
+        for (Membership membership : ofy().load().type(Membership.class).filter("groupId", group.getGroupId()).list()) {
+            ofy().delete().entity(membership);
+        }
+        ofy().delete().entity(group);
     }
 
     private Group joinGroup(Group group, User user, String shareToken) throws BadRequestException {
@@ -320,7 +328,7 @@ public class GroupEndpoint {
         }
 
         // Add member to group
-        Member member = new Member(Key.create(Group.class, group.getGroupId()), user.getUserId(), 1, user.getName());
+        Member member = new Member(Key.create(Group.class, group.getGroupId()), user.getUserId(), 2, user.getName());
         // Use objectify to create entity(Member)
         ofy().save().entity(member).now();
 
@@ -333,9 +341,21 @@ public class GroupEndpoint {
 
     private Group rejoinGroup(Group group, User user) throws UnauthorizedException {
         // Add group to user
-        if (!user.rejoinGroup(group.getGroupId())) {
-            throw new UnauthorizedException("Authorized user does not have access to this group.");
-        }
+        Membership membership = ofy().load().type(Membership.class).ancestor(user).filter("groupId", group.getGroupId()).first().now();
+
+        membership.setPrevious(false);
+
+        Member member = new Member(group.getKey(), user.getUserId(), 2, user.getName());
+
+        // Use objectify to create entity(Member)
+        Key<Member> memberKey = ofy().save().entity(member).now();
+
+        // Load the new member based on Key
+        Member newMember = ofy().load().key(memberKey).now();
+
+        membership.setMemberId(newMember.getMemberId());
+
+        ofy().save().entity(membership);
 
         // TODO: Push notification user has rejoined group?
 

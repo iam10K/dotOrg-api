@@ -9,12 +9,30 @@ import com.dotorg.api.objects.Message;
 import com.dotorg.api.objects.News;
 import com.dotorg.api.objects.Poll;
 import com.dotorg.api.objects.User;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.googlecode.objectify.ObjectifyService;
+
+import java.io.FileInputStream;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 public class OfyHelper implements ServletContextListener {
+    private FirebaseOptions options;
+
+    public OfyHelper() {
+        try {
+            options = new FirebaseOptions.Builder()
+                    .setServiceAccount(new FileInputStream("WEB-INF/firebase/dotOrg-API.json"))
+                    .setDatabaseUrl("https://dotorg-api.firebaseio.com/")
+                    .build();
+            FirebaseApp.initializeApp(options);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
     public void contextInitialized(ServletContextEvent event) {
         ObjectifyService.register(Chat.class);
         ObjectifyService.register(Chatter.class);

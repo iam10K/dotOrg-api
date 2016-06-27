@@ -26,15 +26,28 @@ public class Chat {
 
     private String name;
 
+    private String description;
+
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
-    private Key<Group> groupId;
+    private Key<Group> groupKey;
 
     @Ignore
     private List<Chatter> chatters;
 
     private Chat() {
     }
+
+    public Chat(String name, Key<Group> groupKey) {
+        this.name = name;
+        this.groupKey = groupKey;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Chat> getKey() {
+        return Key.create(Chat.class, chatId);
+    }
+
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getChatId() {
@@ -56,14 +69,22 @@ public class Chat {
     }
 
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Group> getGroupId() {
-        return groupId;
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Key<Group> groupId) {
-        this.groupId = groupId;
+    public Key<Group> getGroupKey() {
+        return groupKey;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setGroupKey(Key<Group> groupKey) {
+        this.groupKey = groupKey;
     }
 
 

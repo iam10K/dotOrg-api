@@ -35,9 +35,14 @@ public class Event {
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
-    private Key<Group> groupId;
+    private Key<Group> groupKey;
 
     private Event() {}
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Event> getKey() {
+        return Key.create(Event.class, eventId);
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getEventId() {
@@ -105,12 +110,12 @@ public class Event {
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Group> getGroupId() {
-        return groupId;
+    public Key<Group> getGroupKey() {
+        return groupKey;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Key<Group> groupId) {
-        this.groupId = groupId;
+    public void setGroupKey(Key<Group> groupKey) {
+        this.groupKey = groupKey;
     }
 }

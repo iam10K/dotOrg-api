@@ -22,24 +22,32 @@ public class Member {
     private Long memberId;
 
     @Parent
-    private Key<Group> groupId;
+    private Key<Group> groupKey;
 
     private String userId;
 
     private Integer memberRole;
     private String nickname;
+
+    private boolean silentMode;
+
     private boolean kicked;
     private boolean leftGroup;
 
     private Member() {
     }
 
-    public Member(Key<Group> groupId, String userId, Integer memberRole, String nickname) {
-        this.groupId = groupId;
+    public Member(Key<Group> groupKey, String userId, Integer memberRole, String nickname) {
+        this.groupKey = groupKey;
         this.userId = userId;
         this.memberRole = memberRole;
         this.nickname = nickname;
         this.kicked = false;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Member> getKey() {
+        return Key.create(Member.class, memberId);
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
@@ -54,17 +62,17 @@ public class Member {
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Group> getGroupId() {
-        return groupId;
+    public Key<Group> getGroupKey() {
+        return groupKey;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupId(Key<Group> groupId) {
-        this.groupId = groupId;
+    public void setGroupKey(Key<Group> groupKey) {
+        this.groupKey = groupKey;
     }
 
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public String getUserId() {
         return userId;
     }
@@ -92,6 +100,14 @@ public class Member {
         this.nickname = nickname;
     }
 
+
+    public boolean isSilentMode() {
+        return silentMode;
+    }
+
+    public void setSilentMode(boolean silentMode) {
+        this.silentMode = silentMode;
+    }
 
     public boolean isKicked() {
         return kicked;

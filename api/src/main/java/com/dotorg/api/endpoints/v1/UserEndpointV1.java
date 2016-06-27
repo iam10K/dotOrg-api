@@ -1,10 +1,9 @@
-package com.dotorg.api.endpoints;
+package com.dotorg.api.endpoints.v1;
 
 import com.dotorg.api.objects.User;
 import com.dotorg.api.utils.ValidationHelper;
-import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
-import com.google.api.server.spi.config.ApiNamespace;
+import com.google.api.server.spi.config.ApiReference;
 import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.firebase.auth.FirebaseAuth;
@@ -18,19 +17,10 @@ import javax.servlet.http.HttpServletRequest;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
-@Api(
-        name = "users",
-        version = "v1",
-        resource = "user",
-        namespace = @ApiNamespace(
-                ownerDomain = "objects.api.dotorg.com",
-                ownerName = "objects.api.dotorg.com",
-                packagePath = ""
-        )
-)
-public class UserEndpoint {
+@ApiReference(BaseEndpointV1.class)
+public class UserEndpointV1 {
 
-    private static final Logger logger = Logger.getLogger(UserEndpoint.class.getName());
+    private static final Logger logger = Logger.getLogger(UserEndpointV1.class.getName());
 
     /**
      * Returns the authenticated {@link User}.
@@ -41,7 +31,7 @@ public class UserEndpoint {
      * @throws UnauthorizedException if the token is invalid.
      */
     @ApiMethod(
-            name = "me",
+            name = "users.me",
             path = "users/me",
             httpMethod = ApiMethod.HttpMethod.GET)
     public User me(HttpServletRequest req, @Named("token") String token) throws NotFoundException, UnauthorizedException {
@@ -89,7 +79,7 @@ public class UserEndpoint {
      * @throws UnauthorizedException if the token is invalid.
      */
     @ApiMethod(
-            name = "update",
+            name = "users.update",
             path = "users/update",
             httpMethod = ApiMethod.HttpMethod.PUT)
     public User update(User newUser, @Named("token") String token) throws NotFoundException, UnauthorizedException {
