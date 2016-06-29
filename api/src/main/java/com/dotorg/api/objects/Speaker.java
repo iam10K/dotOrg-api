@@ -16,11 +16,13 @@ import com.googlecode.objectify.annotation.Parent;
  * COPYRIGHT 2016
  */
 @Entity
-public class Chatter {
+public class Speaker {
     @Id
-    private Long chatterId;
+    private Long speakerId;
 
     private Long memberId;
+
+    private String userId;
 
     private boolean isMuted;
 
@@ -30,21 +32,29 @@ public class Chatter {
     @Parent
     private Key<Chat> chatKey;
 
-    private Chatter() {}
+    private Speaker() {
+    }
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Chatter> getKey() {
-        return Key.create(Chatter.class, chatterId);
+    public Speaker(Long memberId, Key<Chat> chatKey) {
+        this.memberId = memberId;
+        this.chatKey = chatKey;
+        this.isMuted = false;
+        this.ignore = false;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Long getChatterId() {
-        return chatterId;
+    public Key<Speaker> getKey() {
+        return Key.create(Speaker.class, speakerId);
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setChatterId(Long chatterId) {
-        this.chatterId = chatterId;
+    public Long getSpeakerId() {
+        return speakerId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setSpeakerId(Long speakerId) {
+        this.speakerId = speakerId;
     }
 
 
@@ -61,6 +71,22 @@ public class Chatter {
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Member> getMemberKey() {
         return Key.create(Member.class, memberId);
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public String getUserId() {
+        return userId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<User> getUserKey() {
+        return Key.create(User.class, userId);
     }
 
 

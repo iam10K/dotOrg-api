@@ -5,6 +5,7 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Parent;
 
 /**
@@ -31,7 +32,9 @@ public class Member {
 
     private boolean silentMode;
 
+    @Ignore
     private boolean kicked;
+    @Ignore
     private boolean leftGroup;
 
     private Member() {
@@ -61,6 +64,16 @@ public class Member {
     }
 
 
+    public Long getMembershipId() {
+        return memberId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Membership> getMembershipKey() {
+        return Key.create(Membership.class, memberId);
+    }
+
+
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Group> getGroupKey() {
         return groupKey;
@@ -80,6 +93,11 @@ public class Member {
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<User> getUserKey() {
+        return Key.create(User.class, userId);
     }
 
 
@@ -109,19 +127,24 @@ public class Member {
         this.silentMode = silentMode;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public boolean isKicked() {
         return kicked;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setKicked(boolean kicked) {
         this.kicked = kicked;
     }
 
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public boolean isLeftGroup() {
         return leftGroup;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setLeftGroup(boolean leftGroup) {
         this.leftGroup = leftGroup;
     }

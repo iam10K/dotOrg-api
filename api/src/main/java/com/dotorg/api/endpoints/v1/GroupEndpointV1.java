@@ -3,7 +3,7 @@ package com.dotorg.api.endpoints.v1;
 import com.dotorg.api.exceptions.InvalidParameterException;
 import com.dotorg.api.objects.Chat;
 import com.dotorg.api.objects.ChatMembership;
-import com.dotorg.api.objects.Chatter;
+import com.dotorg.api.objects.Speaker;
 import com.dotorg.api.objects.Event;
 import com.dotorg.api.objects.Group;
 import com.dotorg.api.objects.Member;
@@ -309,7 +309,7 @@ public class GroupEndpointV1 {
         for (Chat chat : ofy().load().type(Chat.class).ancestor(group)) {
             List<ChatMembership> chatMembershipList = ofy().load().type(ChatMembership.class).filter("chatId", chat.getChatId()).list();
             ofy().delete().entities(chatMembershipList).now();
-            ofy().delete().type(Chatter.class).parent(chat);
+            ofy().delete().type(Speaker.class).parent(chat);
             ofy().delete().type(Message.class).parent(chat);
             ofy().delete().entity(chat);
         }
@@ -344,16 +344,6 @@ public class GroupEndpointV1 {
         Membership membership = ofy().load().type(Membership.class).ancestor(user).filter("groupId", group.getGroupId()).first().now();
 
         membership.setPrevious(false);
-
-        Member member = new Member(group.getKey(), user.getUserId(), 2, user.getName());
-
-        // Use objectify to create entity(Member)
-        Key<Member> memberKey = ofy().save().entity(member).now();
-
-        // Load the new member based on Key
-        Member newMember = ofy().load().key(memberKey).now();
-
-        membership.setMemberId(newMember.getMemberId());
 
         ofy().save().entity(membership);
 

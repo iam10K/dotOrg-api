@@ -3,7 +3,8 @@ package com.dotorg.api.endpoints.v1;
 import com.dotorg.api.exceptions.InvalidParameterException;
 import com.dotorg.api.objects.Chat;
 import com.dotorg.api.objects.ChatMembership;
-import com.dotorg.api.objects.Chatter;
+import com.dotorg.api.objects.Membership;
+import com.dotorg.api.objects.Speaker;
 import com.dotorg.api.objects.Group;
 import com.dotorg.api.objects.Message;
 import com.dotorg.api.objects.User;
@@ -67,6 +68,9 @@ public class ChatEndpointV1 {
         if (chat == null) {
             throw new NotFoundException("Could not find Chat with ID: " + chatId);
         }
+
+        loadChat(chat);
+
         return chat;
     }
 
@@ -82,7 +86,12 @@ public class ChatEndpointV1 {
 
         ValidationHelper.validateUserInGroup(user, groupId);
 
-        return createChat(chat, groupId, user);
+        Membership membership = ofy().load().type(Membership.class).ancestor(user).filter("groupId", groupId).first().now();
+        if (membership == null) {
+            throw new NotFoundException("Could not find Member with ID: " + user.getUserId());
+        }
+
+        return createChat(chat, groupId, membership);
     }
 
     /**
@@ -103,18 +112,18 @@ public class ChatEndpointV1 {
 
         ValidationHelper.validateUserInGroup(user, groupId);
 
-        // Validate user in chat
-        ChatMembership chatMembership = ofy().load().type(ChatMembership.class).ancestor(user).filter("chatId", chatId).first().now();
-        if (chatMembership == null) {
-            throw new UnauthorizedException("Authorized user is not a member of specified chat.");
-        }
-
         Chat chat = ofy().load().type(Chat.class).id(chatId).now();
         if (chat == null) {
             throw new NotFoundException("Could not find Chat with ID: " + chatId);
         }
 
-        // TODO: Validate chat belongs to group Validation helper
+        ValidationHelper.validateChatOfGroup(chat, groupId);
+
+        // Validate user in chat
+        ChatMembership chatMembership = ofy().load().type(ChatMembership.class).ancestor(user).filter("chatId", chatId).first().now();
+        if (chatMembership == null) {
+            throw new UnauthorizedException("Authorized user is not a member of specified chat.");
+        }
 
         // FUTURE: Permission to rename chat?
         return updateChat(chat, newChat);
@@ -192,7 +201,7 @@ public class ChatEndpointV1 {
 
     }
 
-    private Chat createChat(Chat chat, Long groupId, User user) throws InvalidParameterException {
+    private Chat createChat(Chat chat, Long groupId, Membership membership) throws InvalidParameterException {
         if (chat.getName() == null || chat.getName().equals("")) {
             throw new InvalidParameterException("Invalid chat name, must be longer.");
         }
@@ -201,7 +210,17 @@ public class ChatEndpointV1 {
 
         Key<Chat> chatKey = ofy().save().entity(newChat).now();
         logger.info("Created Chat");
-        return ofy().load().key(chatKey).now();
+        newChat = ofy().load().key(chatKey).now();
+
+        Speaker speaker = new Speaker(membership.getMemberId(), chatKey);
+        Key<Speaker> speakerKey = ofy().save().entity(speaker).now();
+        speaker = ofy().load().key(speakerKey).now();
+
+        ChatMembership chatMembership = new ChatMembership(membership.getUserKey(), newChat.getChatId(), groupId, speaker.getSpeakerId(), membership.getMemberId());
+        ofy().save().entity(chatMembership).now();
+
+        loadChat(newChat);
+        return newChat;
     }
 
     private Chat updateChat(Chat chat, Chat newChat) {
@@ -224,7 +243,7 @@ public class ChatEndpointV1 {
         // Delete all chatMemberships, Chatters, and Messages
         List<ChatMembership> chatMembershipList = ofy().load().type(ChatMembership.class).filter("chatId", chat.getChatId()).list();
         ofy().delete().entities(chatMembershipList).now();
-        ofy().delete().type(Chatter.class).parent(chat);
+        ofy().delete().type(Speaker.class).parent(chat);
         ofy().delete().type(Message.class).parent(chat);
         ofy().delete().entity(chat);
     }

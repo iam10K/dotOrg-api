@@ -17,10 +17,15 @@
         <servlet-class>com.google.api.server.spi.SystemServiceServlet</servlet-class>
         <init-param>
             <param-name>services</param-name>
-            <param-value>com.dotorg.api.endpoints.GroupEndpoint,
-                com.dotorg.api.endpoints.UserEndpoint,
+            <param-value>com.dotorg.api.endpoints.v1.BaseEndpointV1,
+                com.dotorg.api.endpoints.v1.GroupEndpointV1,
+                com.dotorg.api.endpoints.v1.UserEndpointV1,
+                com.dotorg.api.endpoints.v1.MemberEndpointV1,
+                com.dotorg.api.endpoints.v1.ChatEndpointV1,
                 com.dotorg.api.endpoints.AuthEndpoint,
-                com.dotorg.api.endpoints.MemberEndpoint</param-value>
+                com.dotorg.api.endpoints.v1.MessageEndpointV1,
+                com.dotorg.api.endpoints.v1.SpeakerEndpointV1
+            </param-value>
         </init-param>
     </servlet>
     <servlet-mapping>

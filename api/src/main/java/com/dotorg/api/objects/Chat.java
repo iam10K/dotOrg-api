@@ -33,7 +33,7 @@ public class Chat {
     private Key<Group> groupKey;
 
     @Ignore
-    private List<Chatter> chatters;
+    private List<Speaker> speakers;
 
     private Chat() {
     }
@@ -89,12 +89,12 @@ public class Chat {
 
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
-    public List<Chatter> getChatters() {
-        return chatters;
+    public List<Speaker> getSpeakers() {
+        return speakers;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setChatters(List<Chatter> chatters) {
-        this.chatters = chatters;
+    public void setSpeakers(List<Speaker> speakers) {
+        this.speakers = speakers;
     }
 }

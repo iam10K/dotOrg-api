@@ -146,6 +146,11 @@ public class User {
         groups.clear();
         previousGroups.clear();
         for (Membership membership : memberships) {
+            // If user is kicked from group skip group
+            if (membership.isKicked()) {
+                continue;
+            }
+            // If user left or is in group
             if (membership.isPrevious()) {
                 previousGroups.add(membership.getGroupId());
             } else {
@@ -167,6 +172,7 @@ public class User {
         ofy().save().entity(membership).now();
         return member;
     }
+
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public List<Membership> getMemberships() {
         return ofy().load().type(Membership.class).ancestor(this).list();

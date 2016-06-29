@@ -14,10 +14,12 @@ import com.google.api.server.spi.response.NotFoundException;
 import com.google.api.server.spi.response.UnauthorizedException;
 import com.google.appengine.api.datastore.Cursor;
 import com.google.appengine.api.datastore.QueryResultIterator;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.Query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import javax.annotation.Nullable;
@@ -45,7 +47,7 @@ public class MemberEndpointV1 {
      */
     @ApiMethod(
             name = "groups.members.add",
-            path = "groups/{groupId}/members/add",
+            path = "groups/{groupId}/members",
             httpMethod = ApiMethod.HttpMethod.POST)
     public Member add(User addUser, @Named("groupId") Long groupId, @Named("token") String token) throws NotFoundException, UnauthorizedException, InvalidParameterException, BadRequestException {
         User user = ValidationHelper.validateToken(token);
@@ -116,13 +118,7 @@ public class MemberEndpointV1 {
 
         ValidationHelper.validateUserInGroup(user, groupId);
 
-        // TODO: Can be removed and changed to groupkey
-        Group group = ofy().load().type(Group.class).id(groupId).now();
-        if (group == null) {
-            throw new NotFoundException("Could not find Group with ID: " + groupId);
-        }
-
-        Member member = ofy().load().type(Member.class).parent(group).id(memberId).now();
+        Member member = ofy().load().type(Member.class).parent(Key.create(Group.class, groupId)).id(memberId).now();
         if (member == null) {
             throw new NotFoundException("Could not find Member with ID: " + memberId);
         }
@@ -157,28 +153,30 @@ public class MemberEndpointV1 {
         ValidationHelper.validateUserInGroup(user, groupId);
         // FUTURE: Future add memberRole validation
 
+        // May need to remove parent(group)
         Member member = ofy().load().type(Member.class).parent(group).id(memberId).now();
         if (member == null) {
             throw new NotFoundException("Could not find Member with ID: " + memberId);
         }
-        User memberUser = ofy().load().type(User.class).id(member.getUserId()).now();
-        if (memberUser == null) {
-            throw new NotFoundException("Could not find User with ID: " + member.getUserId());
-        }
 
-        ValidationHelper.validateUserInGroup(memberUser, groupId);
-        ValidationHelper.validateUserIsNotGroupOwner(memberUser, group);
+        ValidationHelper.validateMemberOfGroup(member, groupId);
+        ValidationHelper.validateUserIsNotGroupOwner(member.getUserId(), group);
 
-        Membership membership = ofy().load().type(Membership.class).ancestor(memberUser).filter("groupId", groupId).first().now();
+        Membership membership = ofy().load().type(Membership.class).id(member.getMemberId()).now();
         if (membership == null) {
             throw new NotFoundException("Could not find Member with ID: " + member.getUserId());
         }
 
-        // TODO REMOVE chatmemebership
-
-        ofy().delete().entity(member).now();
-        ofy().delete().entity(membership).now();
-        logger.info("Deleted Member with ID: " + memberId);
+        // If user == member then just leave not remove from group
+        if (Objects.equals(user.getUserId(), member.getUserId())) {
+            membership.setPrevious(true);
+            ofy().save().entity(membership);
+            logger.info("Member with ID: " + memberId + " left " + groupId);
+        } else {
+            membership.setKicked(true);
+            logger.info("Kicked Member with ID: " + memberId);
+        }
+        ofy().save().entity(membership);
     }
 
     /**
@@ -216,7 +214,13 @@ public class MemberEndpointV1 {
         QueryResultIterator<Member> queryIterator = query.iterator();
         List<Member> memberList = new ArrayList<>(limit);
         while (queryIterator.hasNext()) {
-            memberList.add(queryIterator.next());
+            Member member = queryIterator.next();
+            Membership membership = ofy().load().key(member.getMembershipKey()).now();
+            if (membership != null) {
+                member.setKicked(membership.isKicked());
+                member.setLeftGroup(membership.isPrevious());
+                memberList.add(member);
+            }
         }
 
         return CollectionResponse.<Member>builder().setItems(memberList).setNextPageToken(queryIterator.getCursor().toWebSafeString()).build();
@@ -227,7 +231,7 @@ public class MemberEndpointV1 {
             member.setNickname(updateMember.getNickname());
         }
 
-        // TODO: More here
+        // TODO: More here // FUTURE: Permissions
 
         ofy().save().entity(member).now();
         logger.info("Updated Member: " + member);

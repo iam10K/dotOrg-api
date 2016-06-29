@@ -18,9 +18,7 @@ import com.googlecode.objectify.annotation.Parent;
 public class Membership {
 
     @Id
-    private Long membershipId;
-
-    private Long memberId;
+    private Long membershipId; // Same as memberID (allows for easier accessing)
 
     @Index
     private Long groupId;
@@ -30,14 +28,17 @@ public class Membership {
 
     private boolean previous;
 
+    private boolean kicked;
+
     public Membership() {
     }
 
     public Membership(Long memberId, Long groupId, Key<User> userKey) {
-        this.memberId = memberId;
+        this.membershipId = memberId;
         this.groupId = groupId;
         this.userKey = userKey;
         this.previous = false;
+        this.kicked = false;
     }
 
     public Key<Membership> getKey() {
@@ -54,15 +55,11 @@ public class Membership {
 
 
     public Long getMemberId() {
-        return memberId;
-    }
-
-    public void setMemberId(Long memberId) {
-        this.memberId = memberId;
+        return membershipId;
     }
 
     public Key<Member> getMemberKey() {
-        return Key.create(Member.class, memberId);
+        return Key.create(Member.class, membershipId);
     }
 
 
@@ -94,5 +91,14 @@ public class Membership {
 
     public void setPrevious(boolean previous) {
         this.previous = previous;
+    }
+
+
+    public boolean isKicked() {
+        return kicked;
+    }
+
+    public void setKicked(boolean kicked) {
+        this.kicked = kicked;
     }
 }

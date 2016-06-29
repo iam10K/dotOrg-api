@@ -16,7 +16,7 @@ import com.googlecode.objectify.annotation.Parent;
 public class ChatMembership {
 
     @Id
-    private Long chatMembershipId;
+    private Long chatMembershipId; // Same as speakerID (allows for easier accessing)
 
     @Parent
     private Key<User> userKey;
@@ -27,9 +27,15 @@ public class ChatMembership {
     @Index
     private Long groupId;
 
-    private Long chatterId;
-
     private Long memberId;
+
+    public ChatMembership(Key<User> userKey, Long chatId, Long groupId, Long speakerId, Long memberId) {
+        this.userKey = userKey;
+        this.chatId = chatId;
+        this.groupId = groupId;
+        this.chatMembershipId = speakerId;
+        this.memberId = memberId;
+    }
 
     public Key<ChatMembership> getKey() {
         return Key.create(ChatMembership.class, chatMembershipId);
@@ -79,16 +85,12 @@ public class ChatMembership {
     }
 
 
-    public Long getChatterId() {
-        return chatterId;
+    public Long getSpeakerId() {
+        return chatMembershipId;
     }
 
-    public void setChatterId(Long chatterId) {
-        this.chatterId = chatterId;
-    }
-
-    public Key<Chatter> getChatterKey() {
-        return Key.create(Chatter.class, chatterId);
+    public Key<Speaker> getChatterKey() {
+        return Key.create(Speaker.class, chatMembershipId);
     }
 
 

@@ -1,7 +1,7 @@
 package com.dotorg.api.utils;
 
 import com.dotorg.api.objects.Chat;
-import com.dotorg.api.objects.Chatter;
+import com.dotorg.api.objects.Speaker;
 import com.dotorg.api.objects.Event;
 import com.dotorg.api.objects.Group;
 import com.dotorg.api.objects.Member;
@@ -35,7 +35,7 @@ public class OfyHelper implements ServletContextListener {
 
     public void contextInitialized(ServletContextEvent event) {
         ObjectifyService.register(Chat.class);
-        ObjectifyService.register(Chatter.class);
+        ObjectifyService.register(Speaker.class);
         ObjectifyService.register(Event.class);
         ObjectifyService.register(Group.class);
         ObjectifyService.register(Member.class);

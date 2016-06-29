@@ -34,7 +34,8 @@
     <!--
       Output from Endpoints API call.
     -->
-    <div class="alert alert-success" style="visibility: collapse;" id="outputAlert"></div>
+    <div class="alert alert-success" style="visibility: collapse;"
+         chatMembershipId="outputAlert"></div>
 
     <!--
       A form that takes a text value and submits it to the Endpoint,
@@ -47,9 +48,12 @@
                 <p>Enter your name and press the button below to call your Google Cloud Endpoints API.</p>
                 <form>
                     <div class="input-group">
-                        <input type="text" class="form-control input-lg" placeholder="Name" id="nameInput" />
+                        <input type="text" class="form-control input-lg" placeholder="Name"
+                               chatMembershipId="nameInput"/>
                           <span class="input-group-btn">
-                             <button class="btn btn-default btn-primary btn-group btn-lg" type="submit" id="helloButton">Say "Hello" &raquo;</button>
+                             <button class="btn btn-default btn-primary btn-group btn-lg"
+                                     type="submit" chatMembershipId="helloButton">Say
+                                 "Hello" &raquo;</button>
                           </span>
                     </div>
                 </form>

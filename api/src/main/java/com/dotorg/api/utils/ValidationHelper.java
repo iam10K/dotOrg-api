@@ -99,6 +99,20 @@ public class ValidationHelper {
         }
     }
 
+    public static void validateUserIsNotGroupOwner(String userId, Group group) throws UnauthorizedException {
+        // Validate user is creator of group
+        if (Objects.equals(group.getCreator(), userId)) {
+            throw new UnauthorizedException("Authorized user is the owner of this group.");
+        }
+    }
+
+    public static void validateMemberOfGroup(Member member, Long groupId) throws UnauthorizedException {
+        // If ids do not match
+        if (!Objects.equals(member.getGroupKey(), Key.create(Group.class, groupId))) {
+            throw new UnauthorizedException("Member does not belong to group.");
+        }
+    }
+
     public static void validateUserIsMember(User user, Member member) throws UnauthorizedException {
         // If the ids do not match up
         if (!Objects.equals(user.getUserId(), member.getUserId())) {
@@ -132,6 +146,10 @@ public class ValidationHelper {
         if (!Objects.equals(message.getChatKey(), Key.create(Chat.class, chatId))) {
             throw new UnauthorizedException("Specified message does not belong to the chat.");
         }
+    }
+
+    public static void validateSpeakerOfChat() {
+
     }
 
     /**
