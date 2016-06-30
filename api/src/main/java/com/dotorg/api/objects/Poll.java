@@ -5,9 +5,11 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Parent;
 
-import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 /**
  * dotOrg-api
@@ -23,22 +25,37 @@ public class Poll {
     @Id
     private Long pollId;
 
-    private String title;
-    private String description;
-
-    private Collection<String> questions;
-
-    private Collection<Integer> votes;
-
-    //private boolean anonymous;
-
-    private Long memberId;
-
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Group> groupKey;
 
+    private String title;
+    private String description;
+
+    private Date createdAt;
+    private Date endDate;
+
+    private boolean anonymous;
+
+    private Long memberId;
+    private String name;
+    private String imageUrl;
+
+    @Ignore
+    private List<Choice> choices;
+
+    @Ignore
+    private List<Vote> voteList;
+
+
     private Poll() {
+    }
+
+    public void createNewPoll(Member member, User user, Key<Group> groupKey) {
+        this.createdAt = new Date();
+        this.memberId = member.getMemberId();
+        this.name = member.getNickname();
+        this.imageUrl = user.getImageUrl();
+        this.groupKey = groupKey;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
@@ -75,31 +92,33 @@ public class Poll {
     }
 
 
-    public Collection<String> getQuestions() {
-        return questions;
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setQuestions(Collection<String> questions) {
-        this.questions = questions;
-    }
-
-
-    public Collection<Integer> getVotes() {
-        return votes;
-    }
-
-    public void setVotes(Collection<Integer> votes) {
-        this.votes = votes;
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
 
-    /*public boolean isAnonymous() {
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
+
+    public boolean isAnonymous() {
         return anonymous;
     }
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
-    }*/
+    }
+
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMemberId() {
@@ -117,6 +136,34 @@ public class Poll {
     }
 
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public List<Choice> getChoices() {
+        return choices;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public void setChoices(List<Choice> choices) {
+        this.choices = choices;
+    }
+
+
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Group> getGroupKey() {
         return groupKey;
@@ -125,5 +172,16 @@ public class Poll {
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setGroupKey(Key<Group> groupKey) {
         this.groupKey = groupKey;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public List<Vote> getVoteList() {
+        return voteList;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setVoteList(List<Vote> voteList) {
+        this.voteList = voteList;
     }
 }

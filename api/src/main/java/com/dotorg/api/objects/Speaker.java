@@ -5,6 +5,7 @@ import com.google.api.server.spi.config.ApiResourceProperty;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Parent;
 
 /**
@@ -24,9 +25,8 @@ public class Speaker {
 
     private String userId;
 
-    private boolean isMuted;
-
-    private boolean ignore;
+    @Ignore
+    private boolean muted;
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
@@ -38,8 +38,7 @@ public class Speaker {
     public Speaker(Long memberId, Key<Chat> chatKey) {
         this.memberId = memberId;
         this.chatKey = chatKey;
-        this.isMuted = false;
-        this.ignore = false;
+        this.muted = false;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
@@ -55,6 +54,17 @@ public class Speaker {
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setSpeakerId(Long speakerId) {
         this.speakerId = speakerId;
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Long getChatMembershipId() {
+        return speakerId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<ChatMembership> getChatMembershipKey() {
+        return Key.create(ChatMembership.class, speakerId);
     }
 
 
@@ -91,20 +101,11 @@ public class Speaker {
 
 
     public boolean isMuted() {
-        return isMuted;
+        return muted;
     }
 
     public void setMuted(boolean muted) {
-        isMuted = muted;
-    }
-
-
-    public boolean isIgnore() {
-        return ignore;
-    }
-
-    public void setIgnore(boolean ignore) {
-        this.ignore = ignore;
+        this.muted = muted;
     }
 
 

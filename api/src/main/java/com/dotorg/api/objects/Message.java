@@ -85,10 +85,12 @@ public class Message {
     }
 
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Date getCreatedAt() {
         return createdAt;
     }
 
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }

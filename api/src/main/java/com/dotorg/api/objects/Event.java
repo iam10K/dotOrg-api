@@ -24,6 +24,8 @@ public class Event {
     @Id
     private Long eventId;
 
+    private Date createdAt;
+
     private Date startDate;
     private Date endDate;
 
@@ -32,12 +34,22 @@ public class Event {
     private GeoPt location;
 
     private Long memberId;
+    private String name;
+    private String imageUrl;
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     @Parent
     private Key<Group> groupKey;
 
     private Event() {}
+
+    public void createNewEvent(Member member, User user, Key<Group> groupKey) {
+        this.createdAt = new Date();
+        this.memberId = member.getMemberId();
+        this.name = member.getNickname();
+        this.imageUrl = user.getImageUrl();
+        this.groupKey = groupKey;
+    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public Key<Event> getKey() {
@@ -54,6 +66,16 @@ public class Event {
         this.eventId = eventId;
     }
 
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
 
     public Date getStartDate() {
         return startDate;
@@ -107,6 +129,23 @@ public class Event {
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
     public void setMemberId(Long memberId) {
         this.memberId = memberId;
+    }
+
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)

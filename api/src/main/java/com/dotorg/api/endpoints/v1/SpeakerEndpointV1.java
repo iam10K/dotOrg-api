@@ -25,14 +25,6 @@ import javax.inject.Named;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
-/**
- * WARNING: This generated code is intended as a sample or starting point for using a
- * Google Cloud Endpoints RESTful API with an Objectify entity. It provides no data access
- * restrictions and no data validation.
- * <p/>
- * DO NOT deploy this code unchanged as part of a real application to real users.
- */
-
 @ApiReference(BaseEndpointV1.class)
 public class SpeakerEndpointV1 {
 
@@ -59,42 +51,18 @@ public class SpeakerEndpointV1 {
         }
         // FUTURE: Permission to add members to chat
 
-        List<Speaker> newSpeakers = new ArrayList<>();
-        for (Member wrapperMember : membersWrapper.getMemberList()) {
-            if (wrapperMember.getMemberId() != null) {
-                Member member = ofy().load().key(wrapperMember.getKey()).now();
-                if (member == null) {
-                    // No member found
-                    continue;
-                }
-
-                try {
-                    ValidationHelper.validateMemberOfGroup(member, groupId);
-                } catch (UnauthorizedException ex) {
-                    // Member is not in group
-                    continue;
-                }
-
-                Speaker speaker = new Speaker(member.getMemberId(), chatMembership.getChatKey());
-                Key<Speaker> speakerKey = ofy().save().entity(speaker).now();
-                speaker = ofy().load().key(speakerKey).now();
-
-                ChatMembership newChatMembership = new ChatMembership(member.getUserKey(), chatId, groupId, speaker.getSpeakerId(), member.getMemberId());
-                ofy().save().entity(newChatMembership).now();
-
-                newSpeakers.add(speaker);
-            }
-        }
+        List<Speaker> speakers = new ArrayList<>();
+        addSpeakers(groupId, chatMembership, membersWrapper, speakers);
 
         // FUTURE: Notification / push message to chat
-        return CollectionResponse.<Speaker>builder().setItems(newSpeakers).build();
+        return CollectionResponse.<Speaker>builder().setItems(speakers).build();
     }
 
     /**
      * Updates an existing {@code Speaker}.
      *
      * @param speakerId the ID of the entity to be updated
-     * @param speaker   the desired state of the entity
+     * @param newSpeaker   the desired state of the entity
      * @return the updated version of the entity
      * @throws NotFoundException if the {@code speakerId} does not correspond to an existing
      *                           {@code Speaker}
@@ -103,12 +71,20 @@ public class SpeakerEndpointV1 {
             name = "groups.chats.speakers.update",
             path = "groups/{groupId}/chats/{chatId}/speakers/{speakerId}",
             httpMethod = ApiMethod.HttpMethod.PUT)
-    public Speaker update(Speaker speaker, @Named("groupId") Long groupId, @Named("chatId") Long chatId, @Named("speakerId") Long speakerId, @Named("token") String token) throws NotFoundException {
-        // TODO: You should validate your ID parameter against your resource's ID here.
-        checkExists(speakerId);
-        ofy().save().entity(speaker).now();
-        logger.info("Updated Speaker: " + speaker);
-        return ofy().load().entity(speaker).now();
+    public Speaker update(Speaker newSpeaker, @Named("groupId") Long groupId, @Named("chatId") Long chatId, @Named("speakerId") Long speakerId, @Named("token") String token) throws NotFoundException, UnauthorizedException {
+        User user = ValidationHelper.validateToken(token);
+
+        ValidationHelper.validateUserInGroup(user, groupId);
+
+        Speaker speaker = ofy().load().type(Speaker.class).id(speakerId).now();
+        if (speaker == null) {
+            throw new NotFoundException("Speaker not found with ID: " + speakerId);
+        }
+
+        ValidationHelper.validateSpeakerIsUser(speaker, user);
+        ValidationHelper.validateSpeakerOfChat(speaker, chatId);
+
+        return updateSpeaker(speaker, newSpeaker);
     }
 
     /**
@@ -135,8 +111,20 @@ public class SpeakerEndpointV1 {
 
         // FUTURE: Permissions to remove
 
+        Speaker speaker = ofy().load().type(Speaker.class).id(speakerId).now();
+        if (speaker == null) {
+            throw new NotFoundException("Speaker not found with ID: " + speakerId);
+        }
 
-        ofy().delete().type(Speaker.class).id(speakerId).now();
+        ChatMembership speakerMembership = ofy().load().key(speaker.getChatMembershipKey()).now();
+        if (speakerMembership == null) {
+            throw new NotFoundException("Speaker not found with ID: " + speakerId);
+        }
+
+        // FUTURE: able to rejoin chat?( by adding leaving or kicking)
+
+        ofy().delete().entity(speakerMembership).now();
+        ofy().delete().entity(speaker).now();
         logger.info("Deleted Speaker with ID: " + speakerId);
     }
 
@@ -153,23 +141,59 @@ public class SpeakerEndpointV1 {
             httpMethod = ApiMethod.HttpMethod.GET)
     public CollectionResponse<Speaker> list(@Named("groupId") Long groupId, @Named("chatId") Long chatId, @Named("token") String token, @Nullable @Named("cursor") String cursor, @Nullable @Named("limit") Integer limit) {
         limit = limit == null ? DEFAULT_LIST_LIMIT : limit;
-        Query<Speaker> query = ofy().load().type(Speaker.class).limit(limit);
+        Query<Speaker> query = ofy().load().type(Speaker.class).filter("chatId", chatId).limit(limit);
         if (cursor != null) {
             query = query.startAt(Cursor.fromWebSafeString(cursor));
         }
         QueryResultIterator<Speaker> queryIterator = query.iterator();
-        List<Speaker> speakerList = new ArrayList<Speaker>(limit);
+        List<Speaker> speakerList = new ArrayList<>(limit);
         while (queryIterator.hasNext()) {
             speakerList.add(queryIterator.next());
         }
         return CollectionResponse.<Speaker>builder().setItems(speakerList).setNextPageToken(queryIterator.getCursor().toWebSafeString()).build();
     }
 
-    private void checkExists(Long chatterId) throws NotFoundException {
-        try {
-            ofy().load().type(Speaker.class).id(chatterId).safe();
-        } catch (com.googlecode.objectify.NotFoundException e) {
-            throw new NotFoundException("Could not find Speaker with ID: " + chatterId);
+    private void addSpeakers(Long groupId, ChatMembership chatMembership, MembersWrapper membersWrapper, List<Speaker> speakers) {
+        for (Member wrapperMember : membersWrapper.getMemberList()) {
+            if (wrapperMember.getMemberId() != null) {
+                Member member = ofy().load().key(wrapperMember.getKey()).now();
+                if (member == null) {
+                    // No member found
+                    continue;
+                }
+
+                try {
+                    ValidationHelper.validateMemberOfGroup(member, groupId);
+                } catch (UnauthorizedException ex) {
+                    // Member is not in group
+                    continue;
+                }
+
+                ChatMembership checkChatMembership = ofy().load().type(ChatMembership.class).ancestor(member.getUserKey()).filter("chatId", chatMembership.getChatId()).first().now();
+                if (checkChatMembership != null) {
+                    // Member already in chat
+                    continue;
+                }
+
+                Speaker speaker = new Speaker(member.getMemberId(), chatMembership.getChatKey());
+                Key<Speaker> speakerKey = ofy().save().entity(speaker).now();
+                speaker = ofy().load().key(speakerKey).now();
+
+                ChatMembership newChatMembership = new ChatMembership(member.getUserKey(), chatMembership.getChatId(), groupId, speaker.getSpeakerId(), member.getMemberId());
+                ofy().save().entity(newChatMembership).now();
+
+                speakers.add(speaker);
+
+                // FUTURE: Add notification (admin message)
+            }
         }
+    }
+
+    private Speaker updateSpeaker(Speaker speaker, Speaker newSpeaker) {
+        speaker.setMuted(newSpeaker.isMuted());
+
+        ofy().save().entity(speaker).now();
+        logger.info("Updated Speaker: " + speaker.getSpeakerId());
+        return speaker;
     }
 }

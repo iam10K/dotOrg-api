@@ -24,7 +24,10 @@
                 com.dotorg.api.endpoints.v1.ChatEndpointV1,
                 com.dotorg.api.endpoints.AuthEndpoint,
                 com.dotorg.api.endpoints.v1.MessageEndpointV1,
-                com.dotorg.api.endpoints.v1.SpeakerEndpointV1
+                com.dotorg.api.endpoints.v1.SpeakerEndpointV1,
+                com.dotorg.api.endpoints.v1.PollEndpointV1,
+                com.dotorg.api.endpoints.v1.EventEndpointV1,
+                com.dotorg.api.endpoints.v1.NewsEndpointV1
             </param-value>
         </init-param>
     </servlet>

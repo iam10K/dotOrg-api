@@ -3,97 +3,69 @@ package com.dotorg.api.objects;
 import com.google.api.server.spi.config.AnnotationBoolean;
 import com.google.api.server.spi.config.ApiResourceProperty;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
-
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
 
 /**
  * dotOrg-api
- * Date Created: 5/21/2016
+ * Date Created: 6/28/2016
  * |
  * Original Package: com.dotorg.api.objects
  * |
  * COPYRIGHT 2016
  */
-@Entity
-public class News {
+public class Vote {
 
     @Id
-    private Long newsId;
+    private Long voteId;
 
-    private String title;
-    private String description;
-
-    private Date createdAt;
+    @Parent
+    private Key<Poll> pollKey;
 
     private Long memberId;
     private String name;
     private String imageUrl;
 
-    @Ignore
-    private Collection<Object> attachments;
+    private Long choiceId;
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    @Parent
-    private Key<Group> groupKey;
+    @Index
+    private String userId;
 
-    private News() {
-    }
-
-    public void createNewNews(Member member, User user, Key<Group> groupKey) {
-        this.createdAt = new Date();
+    public Vote(Key<Poll> pollKey, Member member, User user, Long choiceId) {
+        this.pollKey = pollKey;
         this.memberId = member.getMemberId();
         this.name = member.getNickname();
         this.imageUrl = user.getImageUrl();
-        this.groupKey = groupKey;
+        this.choiceId = choiceId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<News> getKey() {
-        return Key.create(News.class, newsId);
+    public Key<Vote> getKey() {
+        return Key.create(Vote.class, voteId);
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
-    public Long getNewsId() {
-        return newsId;
+    public Long getVoteId() {
+        return voteId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setNewsId(Long newsId) {
-        this.newsId = newsId;
+    public void setVoteId(Long voteId) {
+        this.voteId = voteId;
     }
 
 
-    public String getTitle() {
-        return title;
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<Poll> getPollKey() {
+        return pollKey;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setPollKey(Key<Poll> pollKey) {
+        this.pollKey = pollKey;
     }
 
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public Long getMemberId() {
@@ -121,6 +93,7 @@ public class News {
         this.name = name;
     }
 
+
     @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
     public String getImageUrl() {
         return imageUrl;
@@ -132,24 +105,34 @@ public class News {
     }
 
 
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Collection<Object> getAttachments() {
-        return attachments;
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public Long getChoiceId() {
+        return choiceId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setAttachments(List<Object> attachments) {
-        this.attachments = attachments;
-    }
-
-
-    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public Key<Group> getGroupKey() {
-        return groupKey;
+    public void setChoiceId(Long choiceId) {
+        this.choiceId = choiceId;
     }
 
     @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
-    public void setGroupKey(Key<Group> groupKey) {
-        this.groupKey = groupKey;
+    public Key<Choice> getChoiceKey() {
+        return Key.create(Choice.class, choiceId);
+    }
+
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.FALSE)
+    public String getUserId() {
+        return userId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    @ApiResourceProperty(ignored = AnnotationBoolean.TRUE)
+    public Key<User> getUserKey() {
+        return Key.create(User.class, userId);
     }
 }
